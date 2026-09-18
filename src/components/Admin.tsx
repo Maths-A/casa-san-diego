@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { HostKey, Period, RoomState } from '../data/types'
 import { config } from '../config'
-import { addDays, formatRange, nights, parseISO, toISO, today } from '../lib/dates'
+import { addDays, formatRange, nights, parseISO, toISO, today, upcoming } from '../lib/dates'
+import { buildCalendar } from '../lib/calendar'
+import { Calendar } from './Calendar'
+import { Legend } from './Legend'
 import { HOST_KEYS, guestStatus, roomLabel, statusLabel } from '../lib/status'
 import { fetchSnapshot, isRecipient, periodsKey, saveSnapshot } from '../lib/gist'
 import { MailError, sendRequest } from '../lib/mail'
@@ -85,6 +88,10 @@ export function Admin() {
 
   const start = useMemo(() => today(), [])
   const clashes = useMemo(() => overlaps(rows), [rows])
+  const draftView = useMemo(
+    () => buildCalendar(upcoming(rows, start), start, config.monthsAhead),
+    [rows, start],
+  )
   const valid = useMemo(
     () => recipients.map((entry) => entry.trim()).filter(isRecipient),
     [recipients],
@@ -513,6 +520,15 @@ export function Admin() {
           Qui connaît cet identifiant peut lire le Gist, puisque la page des visiteurs le lit sans
           jeton. N&rsquo;y écrivez donc rien de confidentiel.
         </p>
+      </section>
+
+      <section className="panel">
+        <h2>Qui est là, jour par jour</h2>
+        <p className="request-lead">
+          Le brouillon tel qu&rsquo;il sera vu. Passez sur un jour pour lire qui est à la maison.
+        </p>
+        <Legend />
+        <Calendar view={draftView} start={start} monthCount={config.monthsAhead} />
       </section>
 
       <section className="panel">

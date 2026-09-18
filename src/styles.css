@@ -12,6 +12,10 @@
   --booked-soft: #f7e0dd;
   --blocked: #8b8377;
   --blocked-soft: #ebe6de;
+  --mathis: #2f6fb5;
+  --mathis-soft: #dbe8f7;
+  --julie: #a4499b;
+  --julie-soft: #f6dcf2;
   --radius: 14px;
   --shadow: 0 1px 2px rgba(35, 32, 28, 0.05), 0 8px 24px rgba(35, 32, 28, 0.05);
 }
@@ -31,6 +35,10 @@
     --booked-soft: #3b2522;
     --blocked: #8e8579;
     --blocked-soft: #2c2824;
+    --mathis: #6ba8e8;
+    --mathis-soft: #1b2b3f;
+    --julie: #dd8ad2;
+    --julie-soft: #35212f;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
   }
 }
@@ -152,6 +160,16 @@ body {
   border: 1px solid var(--blocked);
 }
 
+.swatch.solo-mathis {
+  background: var(--mathis-soft);
+  border: 1px solid var(--mathis);
+}
+
+.swatch.solo-julie {
+  background: var(--julie-soft);
+  border: 1px solid var(--julie);
+}
+
 /* ---------- calendar ---------- */
 
 .calendar {
@@ -224,6 +242,28 @@ body {
 .day.open:hover,
 .day.open:focus-visible {
   background: var(--open);
+  color: var(--accent-ink);
+}
+
+.day.open.solo-mathis {
+  background: var(--mathis-soft);
+  border-color: var(--mathis);
+}
+
+.day.open.solo-mathis:hover,
+.day.open.solo-mathis:focus-visible {
+  background: var(--mathis);
+  color: var(--accent-ink);
+}
+
+.day.open.solo-julie {
+  background: var(--julie-soft);
+  border-color: var(--julie);
+}
+
+.day.open.solo-julie:hover,
+.day.open.solo-julie:focus-visible {
+  background: var(--julie);
   color: var(--accent-ink);
 }
 

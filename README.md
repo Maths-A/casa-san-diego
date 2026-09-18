@@ -29,6 +29,19 @@ Deux choses à savoir :
   que soixante appels par heure et par adresse IP à qui n'est pas authentifié,
   ce qui suffisait mal à une maison entière.
 
+## Qui est là, jour par jour
+
+Chaque jour du calendrier porte sa couleur : vert quand nous sommes là tous les
+deux, bleu quand Mathis est seul, violet quand Julie est seule, rouge quand la
+chambre est prise et gris quand personne n'est à la maison. Passez la souris sur
+un jour pour lire la phrase complète, note comprise.
+
+Sans exception saisie pour une date, le site considère que nous y sommes tous
+les deux : ces couleurs ne connaissent que ce que le tableau dit.
+
+Le tableau d'administration affiche le même calendrier, construit sur le
+brouillon, pour voir l'effet d'une ligne avant de publier.
+
 ## Le tableau d'administration
 
 Ajoutez `#admin` à l'adresse : <https://maths-a.github.io/casa-san-diego/#admin>.

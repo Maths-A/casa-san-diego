@@ -1,7 +1,8 @@
-import type { Period } from '../data/types'
-import { addDays, daysOf, toISO } from './dates'
+import type { HostKey, Period } from '../data/types'
+import { config } from '../config'
+import { addDays, daysOf, formatDay, toISO } from './dates'
 import type { Status } from './status'
-import { guestStatus } from './status'
+import { HOST_KEYS, guestStatus, statusLabel } from './status'
 
 /** Une suite de nuits libres, déduite de ce qui n'est pas pris. */
 export interface OpenWindow {
@@ -14,15 +15,33 @@ export interface OpenWindow {
   openEnded: boolean
 }
 
+/** Qui est à la maison, une fois les exceptions appliquées. */
+export type Presence = 'both' | 'mathis' | 'julie' | 'none'
+
+export interface DayInfo {
+  status: Status
+  presence: Presence
+  hosts: Record<HostKey, boolean>
+  note?: string
+}
+
 export interface CalendarView {
-  /** Statut de chaque jour de l'horizon. Tout est libre sauf exception. */
-  status: Map<string, Status>
-  /** La note à afficher sur un jour pris, s'il y en a une. */
-  noteByDay: Map<string, string>
+  /** Chaque jour de l'horizon. Tout est libre et habité, sauf exception. */
+  days: Map<string, DayInfo>
   /** Les suites de nuits libres, dans l'ordre. */
   windows: OpenWindow[]
   /** De quel créneau libre fait partie un jour donné. */
   windowByDay: Map<string, OpenWindow>
+}
+
+/** Sans exception saisie, on considère que nous sommes là tous les deux. */
+const BOTH_HOME: Record<HostKey, boolean> = { mathis: true, julie: true }
+
+function presenceOf(hosts: Record<HostKey, boolean>): Presence {
+  const home = HOST_KEYS.filter((key) => hosts[key])
+  if (home.length === HOST_KEYS.length) return 'both'
+  if (home.length === 0) return 'none'
+  return home[0]
 }
 
 /** Le dernier jour du mois qui clôt l'horizon affiché. */
@@ -40,8 +59,7 @@ export function buildCalendar(periods: Period[], from: Date, months: number): Ca
     for (const day of daysOf(period)) exceptions.set(day, period)
   }
 
-  const status = new Map<string, Status>()
-  const noteByDay = new Map<string, string>()
+  const days = new Map<string, DayInfo>()
   const windows: OpenWindow[] = []
   const windowByDay = new Map<string, OpenWindow>()
 
@@ -60,19 +78,39 @@ export function buildCalendar(periods: Period[], from: Date, months: number): Ca
   for (let date = from; date <= end; date = addDays(date, 1)) {
     const iso = toISO(date)
     const exception = exceptions.get(iso)
-    const state: Status = exception ? guestStatus(exception) : 'open'
-    status.set(iso, state)
-    if (exception?.note) noteByDay.set(iso, exception.note)
+    const hosts = exception ? exception.hosts : BOTH_HOME
+    const status: Status = exception ? guestStatus(exception) : 'open'
 
-    if (state === 'open') run.push(iso)
+    days.set(iso, {
+      status,
+      hosts,
+      presence: presenceOf(hosts),
+      note: exception?.note,
+    })
+
+    if (status === 'open') run.push(iso)
     else closeRun()
   }
   closeRun()
 
-  return { status, noteByDay, windows, windowByDay }
+  return { days, windows, windowByDay }
 }
 
 /** Le créneau libre qui contient ce jour, s'il y en a un. */
 export function windowOf(view: CalendarView, iso: string): OpenWindow | null {
   return view.windowByDay.get(iso) ?? null
+}
+
+const PRESENCE_TEXT: Record<Presence, string> = {
+  both: `${config.hostNames.mathis} et ${config.hostNames.julie} sont là`,
+  mathis: `${config.hostNames.mathis} est là, ${config.hostNames.julie} est absente`,
+  julie: `${config.hostNames.julie} est là, ${config.hostNames.mathis} est absent`,
+  none: 'personne à la maison',
+}
+
+/** La phrase qui s'affiche au survol d'un jour. */
+export function describeDay(iso: string, info: DayInfo, reference?: Date): string {
+  const parts = [formatDay(iso, reference), statusLabel[info.status], PRESENCE_TEXT[info.presence]]
+  if (info.note) parts.push(info.note)
+  return parts.join(' · ')
 }
