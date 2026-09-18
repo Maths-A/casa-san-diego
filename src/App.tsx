@@ -59,12 +59,14 @@ export default function App() {
   const visible = useMemo(() => upcoming(periods, start), [periods, start])
   const dayIndex = useMemo(() => buildDayIndex(visible), [visible])
   const [selected, setSelected] = useState<Period | null>(null)
+  const [extraMonths, setExtraMonths] = useState(0)
 
-  // Le calendrier va jusqu'à la dernière nuit saisie, aussi loin qu'elle soit.
+  // Une année devant soi, davantage si des dates vont plus loin, et autant de
+  // fois douze mois de plus que le visiteur en demande.
   const monthCount = useMemo(() => {
     const last = visible.reduce((max, p) => (p.to > max ? p.to : max), toISO(start))
-    return Math.max(config.minMonths, monthSpan(start, parseISO(last)))
-  }, [visible, start])
+    return Math.max(config.monthsAhead + extraMonths, monthSpan(start, parseISO(last)))
+  }, [visible, start, extraMonths])
 
   function pick(period: Period) {
     setSelected(period)
@@ -107,6 +109,14 @@ export default function App() {
               <>
                 <Legend />
                 <Calendar dayIndex={dayIndex} start={start} monthCount={monthCount} onPick={pick} />
+                <div className="actions more">
+                  <button
+                    className="button"
+                    onClick={() => setExtraMonths((months) => months + config.monthsAhead)}
+                  >
+                    Voir plus loin
+                  </button>
+                </div>
               </>
             )}
           </section>

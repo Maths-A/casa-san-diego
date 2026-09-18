@@ -70,13 +70,16 @@ page et créez-en un autre.
 - `note` ajoute une petite ligne sur la carte, par exemple `"Ana et Tom"`.
 
 Le site relit ce fichier sans rien croire sur parole : une entrée mal formée est
-ignorée plutôt que d'abîmer la page. Le calendrier affiche tous les mois jusqu'à
-la dernière date saisie, sans limite, et les dates passées disparaissent seules.
+ignorée plutôt que d'abîmer la page. Les dates passées disparaissent seules.
+
+Le calendrier montre une année devant lui, réglable par `monthsAhead` dans
+`src/config.ts`. Il va plus loin tout seul si des dates dépassent cet horizon,
+et le bouton « Voir plus loin » en ajoute autant à chaque clic.
 
 ## Changer les textes
 
-`src/config.ts` contient le titre, la phrase d'accueil, les prénoms, le nombre
-minimum de mois affichés et les encarts « Bon à savoir ». Un changement de texte
+`src/config.ts` contient le titre, la phrase d'accueil, les prénoms, l'horizon
+du calendrier et les encarts « Bon à savoir ». Un changement de texte
 passe par un `git push`, contrairement aux dates.
 
 `contactEmail` est vide exprès : le bouton copie alors la demande dans le

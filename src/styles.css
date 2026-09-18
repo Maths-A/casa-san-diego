@@ -558,3 +558,8 @@ code {
 a {
   color: var(--accent);
 }
+
+.actions.more {
+  margin-top: 24px;
+  justify-content: center;
+}

@@ -37,10 +37,11 @@ export const config = {
   gistFile: 'availability.json',
 
   /**
-   * Le calendrier va jusqu'à la dernière date saisie, sans limite. Ce nombre
-   * n'est qu'un plancher, pour que la page ne soit pas vide au démarrage.
+   * Nombre de mois affichés d'emblée. Le calendrier va de toute façon jusqu'à
+   * la dernière date saisie si elle est plus lointaine, et un bouton en ajoute
+   * autant à chaque clic : l'avenir n'a pas de fin, la page si.
    */
-  minMonths: 3,
+  monthsAhead: 12,
 
   /** Les encarts « Bon à savoir ». Modifie-les librement. */
   practicalInfo: [
