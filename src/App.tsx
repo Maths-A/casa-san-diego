@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Period } from './data/types'
-import { periods } from './data/availability'
 import { config } from './config'
 import { buildDayIndex, monthSpan, parseISO, today, toISO, upcoming } from './lib/dates'
+import { fetchSnapshot } from './lib/gist'
 import { scrollToElement } from './lib/scroll'
 import { Admin } from './components/Admin'
 import { Calendar } from './components/Calendar'
@@ -21,10 +21,42 @@ function useIsAdmin(): boolean {
   return hash === '#admin'
 }
 
+type Load =
+  | { state: 'loading' }
+  | { state: 'ready'; periods: Period[] }
+  | { state: 'error'; message: string }
+
+/** Le calendrier vient du Gist, relu à chaque chargement de la page. */
+function useCalendar(): Load {
+  const [load, setLoad] = useState<Load>({ state: 'loading' })
+
+  useEffect(() => {
+    if (!config.gistId) {
+      setLoad({ state: 'error', message: 'Le calendrier n’est pas encore branché.' })
+      return
+    }
+    let cancelled = false
+    fetchSnapshot(config.gistId)
+      .then((snapshot) => {
+        if (!cancelled) setLoad({ state: 'ready', periods: snapshot.periods })
+      })
+      .catch((error: Error) => {
+        if (!cancelled) setLoad({ state: 'error', message: error.message })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return load
+}
+
 export default function App() {
   const isAdmin = useIsAdmin()
+  const load = useCalendar()
   const start = useMemo(() => today(), [])
-  const visible = useMemo(() => upcoming(periods, start), [start])
+  const periods = load.state === 'ready' ? load.periods : []
+  const visible = useMemo(() => upcoming(periods, start), [periods, start])
   const dayIndex = useMemo(() => buildDayIndex(visible), [visible])
   const [selected, setSelected] = useState<Period | null>(null)
 
@@ -65,14 +97,26 @@ export default function App() {
         <main>
           <section className="panel">
             <h2>Quand la chambre est libre</h2>
-            <Legend />
-            <Calendar dayIndex={dayIndex} start={start} monthCount={monthCount} onPick={pick} />
+            {load.state === 'loading' && <p className="empty-state">Chargement du calendrier…</p>}
+            {load.state === 'error' && (
+              <p className="empty-state">
+                Le calendrier n&rsquo;a pas pu être chargé. Écrivez-nous, on vous dira de vive voix.
+              </p>
+            )}
+            {load.state === 'ready' && (
+              <>
+                <Legend />
+                <Calendar dayIndex={dayIndex} start={start} monthCount={monthCount} onPick={pick} />
+              </>
+            )}
           </section>
 
-          <section className="panel">
-            <h2>Les périodes libres</h2>
-            <OpenWindows periods={visible} start={start} selected={selected} onPick={pick} />
-          </section>
+          {load.state === 'ready' && (
+            <section className="panel">
+              <h2>Les périodes libres</h2>
+              <OpenWindows periods={visible} start={start} selected={selected} onPick={pick} />
+            </section>
+          )}
 
           <section className="panel" id="ask">
             <RequestForm selected={selected} start={start} />

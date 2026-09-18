@@ -28,6 +28,15 @@ export const config = {
   contactEmail: '',
 
   /**
+   * Le Gist secret qui contient le calendrier. C'est la seule source de
+   * vérité : la page des visiteurs le lit à chaque chargement, et le tableau
+   * d'administration l'écrit. Son contenu est lisible par qui connaît cet
+   * identifiant, donc on n'y met rien de confidentiel.
+   */
+  gistId: '4647b5e666be422544905df483333b88',
+  gistFile: 'availability.json',
+
+  /**
    * Le calendrier va jusqu'à la dernière date saisie, sans limite. Ce nombre
    * n'est qu'un plancher, pour que la page ne soit pas vide au démarrage.
    */

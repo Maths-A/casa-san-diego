@@ -1,67 +1,153 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { HostKey, Period, RoomState } from '../data/types'
-import { periods as filePeriods } from '../data/availability'
 import { config } from '../config'
 import { addDays, formatRange, nights, parseISO, toISO, today } from '../lib/dates'
 import { HOST_KEYS, guestStatus, roomLabel, statusLabel } from '../lib/status'
-import { toFileSource } from '../lib/serialize'
+import { createGist, fetchSnapshot, saveSnapshot, writeSnapshot } from '../lib/gist'
 
 const DRAFT_KEY = 'casa-san-diego:brouillon'
+const TOKEN_KEY = 'casa-san-diego:jeton'
+const GIST_KEY = 'casa-san-diego:gist'
 const ROOM_STATES: RoomState[] = ['free', 'booked', 'blocked']
 
-/** Le brouillon local, s'il y en a un et qu'il est lisible. */
-function loadDraft(): Period[] | null {
+/** Le stockage du navigateur peut être refusé : aucune lecture ne doit casser la page. */
+function readLocal(key: string): string | null {
   try {
-    const raw = window.localStorage.getItem(DRAFT_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as Period[]) : null
+    return window.localStorage.getItem(key)
   } catch {
-    // Stockage refusé (navigation privée) ou brouillon abîmé : on repart du fichier.
     return null
   }
 }
 
-/** Les paires de périodes qui se chevauchent, pour prévenir avant l'export. */
+function writeLocal(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {
+    // Tant pis : le tableau reste utilisable, il ne survivra pas au rechargement.
+  }
+}
+
+function loadDraft(): Period[] | null {
+  const raw = readLocal(DRAFT_KEY)
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? (parsed as Period[]) : null
+  } catch {
+    return null
+  }
+}
+
+/** Les paires de périodes qui se chevauchent, pour prévenir avant de publier. */
 function overlaps(periods: Period[]): [number, number][] {
   const found: [number, number][] = []
   for (let i = 0; i < periods.length; i++) {
     for (let j = i + 1; j < periods.length; j++) {
-      const a = periods[i]
-      const b = periods[j]
-      if (a.from <= b.to && b.from <= a.to) found.push([i, j])
+      if (periods[i].from <= periods[j].to && periods[j].from <= periods[i].to) found.push([i, j])
     }
   }
   return found
 }
 
 export function Admin() {
-  const [rows, setRows] = useState<Period[]>(() => loadDraft() ?? filePeriods)
-  const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(rows))
-    } catch {
-      // Rien à faire : le tableau reste utilisable, il ne survivra juste pas au rechargement.
-    }
-  }, [rows])
+  const [rows, setRows] = useState<Period[]>(() => loadDraft() ?? [])
+  const [published, setPublished] = useState<Period[] | null>(null)
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null)
+  const [gistId, setGistId] = useState<string>(() => config.gistId || readLocal(GIST_KEY) || '')
+  const [token, setToken] = useState<string>(() => readLocal(TOKEN_KEY) ?? '')
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
 
   const start = useMemo(() => today(), [])
-  const source = useMemo(() => toFileSource(rows), [rows])
   const clashes = useMemo(() => overlaps(rows), [rows])
-  const dirty = source !== toFileSource(filePeriods)
+  const dirty = published === null || writeSnapshot(rows) !== writeSnapshot(published)
+
+  useEffect(() => writeLocal(DRAFT_KEY, JSON.stringify(rows)), [rows])
+  useEffect(() => writeLocal(GIST_KEY, gistId), [gistId])
+  useEffect(() => writeLocal(TOKEN_KEY, token), [token])
+
+  function report(text: string, isError = false) {
+    setMessage(text)
+    setFailed(isError)
+  }
+
+  async function run(what: () => Promise<void>) {
+    setBusy(true)
+    try {
+      await what()
+    } catch (error) {
+      report(error instanceof Error ? error.message : 'Quelque chose a échoué.', true)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Au premier affichage, on montre ce que voient les visiteurs.
+  useEffect(() => {
+    if (!gistId) return
+    let cancelled = false
+    fetchSnapshot(gistId)
+      .then((snapshot) => {
+        if (cancelled) return
+        setPublished(snapshot.periods)
+        setUpdatedAt(snapshot.updatedAt)
+        if (!loadDraft()) setRows(snapshot.periods)
+        report('Calendrier chargé depuis le Gist.')
+      })
+      .catch((error: Error) => {
+        if (!cancelled) report(error.message, true)
+      })
+    return () => {
+      cancelled = true
+    }
+    // Volontairement au montage seulement : ensuite, on recharge à la demande.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const reload = () =>
+    run(async () => {
+      const snapshot = await fetchSnapshot(gistId)
+      setPublished(snapshot.periods)
+      setUpdatedAt(snapshot.updatedAt)
+      setRows(snapshot.periods)
+      report('Brouillon remplacé par ce qui est en ligne.')
+    })
+
+  const publish = () =>
+    run(async () => {
+      const snapshot = await saveSnapshot(gistId, token, rows)
+      setPublished(snapshot.periods)
+      setUpdatedAt(snapshot.updatedAt)
+      setRows(snapshot.periods)
+      report('Publié. Les visiteurs le voient dès maintenant.')
+    })
+
+  const create = () =>
+    run(async () => {
+      const id = await createGist(token, rows)
+      setGistId(id)
+      setPublished(rows)
+      report(`Gist créé. Collez ${id} dans gistId, côté src/config.ts, puis poussez une fois.`)
+    })
+
+  function download() {
+    const url = URL.createObjectURL(new Blob([writeSnapshot(rows)], { type: 'application/json' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = config.gistFile
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   function patch(index: number, change: Partial<Period>) {
     setRows((current) => current.map((row, i) => (i === index ? { ...row, ...change } : row)))
-    setCopied(false)
   }
 
   function setHost(index: number, host: HostKey, value: boolean) {
     setRows((current) =>
       current.map((row, i) => (i === index ? { ...row, hosts: { ...row.hosts, [host]: value } } : row)),
     )
-    setCopied(false)
   }
 
   function addRow() {
@@ -71,31 +157,13 @@ export function Admin() {
       ...current,
       { from, to: toISO(addDays(parseISO(from), 2)), hosts: { mathis: true, julie: true }, room: 'free' },
     ])
-    setCopied(false)
   }
 
-  function removeRow(index: number) {
-    setRows((current) => current.filter((_, i) => i !== index))
-    setCopied(false)
-  }
-
-  async function copySource() {
-    try {
-      await navigator.clipboard.writeText(source)
-      setCopied(true)
-    } catch {
-      setCopied(false)
-    }
-  }
-
-  function download() {
-    const url = URL.createObjectURL(new Blob([source], { type: 'text/plain' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'availability.ts'
-    link.click()
-    URL.revokeObjectURL(url)
-  }
+  const publishedAt = updatedAt
+    ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' }).format(
+        new Date(updatedAt),
+      )
+    : null
 
   return (
     <div className="admin">
@@ -185,7 +253,7 @@ export function Admin() {
                     <td>
                       <button
                         className="link-button"
-                        onClick={() => removeRow(index)}
+                        onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
                         aria-label={`Supprimer la période ${row.from} au ${row.to}`}
                       >
                         Supprimer
@@ -209,10 +277,24 @@ export function Admin() {
           <button className="button" onClick={addRow}>
             Ajouter une période
           </button>
-          <button className="button" onClick={() => setRows(filePeriods)} disabled={!dirty}>
-            Repartir du fichier
+          <button className="button primary" onClick={publish} disabled={busy || !gistId || !token}>
+            {busy ? 'En cours…' : 'Publier'}
+          </button>
+          <button className="button" onClick={reload} disabled={busy || !gistId}>
+            Recharger depuis le Gist
+          </button>
+          <button className="button" onClick={download}>
+            Télécharger une sauvegarde
           </button>
         </div>
+
+        <p className={failed ? 'warn' : 'hint'}>
+          {message ?? 'Rien n’est publié tant que vous ne cliquez pas sur Publier.'}
+        </p>
+        <p className="hint">
+          {dirty ? 'Brouillon non publié.' : 'Le brouillon est identique au calendrier en ligne.'}
+          {publishedAt ? ` Dernière publication : ${publishedAt}.` : ''}
+        </p>
 
         {clashes.length > 0 && (
           <p className="warn">
@@ -223,27 +305,46 @@ export function Admin() {
       </section>
 
       <section className="panel">
-        <h2>Mettre le site à jour</h2>
+        <h2>Le Gist</h2>
         <p className="request-lead">
-          Le site est un fichier du dépôt, pas une base de données. Vos modifications restent dans ce
-          navigateur jusqu&rsquo;à ce que vous colliez le texte ci-dessous dans{' '}
-          <code>src/data/availability.ts</code>, puis que vous poussiez sur <code>main</code>.
+          Le calendrier est stocké dans un Gist secret, et non dans le dépôt. Le jeton reste dans ce
+          navigateur, il n&rsquo;est jamais publié. N&rsquo;utilisez ce tableau que sur vos appareils.
         </p>
 
-        <pre className="preview source">{source}</pre>
-
-        <div className="actions">
-          <button className="button primary" onClick={copySource}>
-            {copied ? 'Copié' : 'Copier le fichier'}
-          </button>
-          <button className="button" onClick={download}>
-            Télécharger availability.ts
-          </button>
+        <div className="fields">
+          <label className="wide">
+            Jeton GitHub, avec la permission Gists en écriture
+            <input
+              type="password"
+              value={token}
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(e) => setToken(e.target.value.trim())}
+              placeholder="github_pat_…"
+            />
+          </label>
+          <label className="wide">
+            Identifiant du Gist
+            <input
+              value={gistId}
+              spellCheck={false}
+              onChange={(e) => setGistId(e.target.value.trim())}
+              placeholder="8f2c…"
+            />
+          </label>
         </div>
+
+        {!config.gistId && (
+          <div className="actions">
+            <button className="button" onClick={create} disabled={busy || !token || Boolean(gistId)}>
+              Créer le Gist
+            </button>
+          </div>
+        )}
+
         <p className="hint">
-          {dirty
-            ? 'Le brouillon diffère du fichier en ligne.'
-            : 'Le brouillon est identique au fichier en ligne.'}
+          Qui connaît cet identifiant peut lire le Gist, puisque la page des visiteurs le lit sans
+          jeton. N&rsquo;y écrivez donc rien de confidentiel.
         </p>
       </section>
 

@@ -1,58 +1,85 @@
 # Casa San Diego
 
 Une page unique qui montre les nuits où notre chambre d'amis est libre, et qui
-permet aux amis de demander ces dates. C'est un site statique : pas de base de
-données, pas de serveur, le calendrier est un fichier de ce dépôt.
+permet aux amis de demander ces dates.
 
 En ligne sur **https://maths-a.github.io/casa-san-diego/**
+
+## Où sont les données
+
+Dans un **Gist secret**, pas dans ce dépôt. La page des visiteurs le lit à
+chaque chargement, sans jeton, et le tableau d'administration l'écrit. Une
+modification est donc visible en une minute environ, sans reconstruire le site.
+
+Son identifiant est dans `gistId`, côté `src/config.ts`. Le dépôt ne contient
+aucune date : il ne contient que le code.
+
+Deux choses à savoir :
+
+- Qui connaît cet identifiant peut lire le Gist, puisque la page le lit sans
+  s'authentifier. N'y écrivez rien de confidentiel.
+- GitHub limite les lectures anonymes à soixante par heure et par adresse IP.
+  C'est large pour un site de famille, mais c'est la limite.
 
 ## Le tableau d'administration
 
 Ajoutez `#admin` à l'adresse : <https://maths-a.github.io/casa-san-diego/#admin>.
 
-Une ligne par période, avec deux cases à cocher, une pour Mathis et une pour
-Julie. La chambre n'est proposée aux visiteurs que si elle est libre **et**
-qu'au moins l'un de nous deux est à la maison.
+Une ligne par période, avec une case pour Mathis et une pour Julie. La chambre
+n'est proposée aux visiteurs que si elle est libre **et** qu'au moins l'un de
+nous deux est à la maison.
 
-Vos modifications restent dans le navigateur qui les a faites. Pour les mettre
-en ligne, copiez le texte généré en bas de la page, remplacez tout le contenu
-de `src/data/availability.ts`, puis poussez sur `main`.
+Vos modifications restent dans le navigateur qui les a faites jusqu'à ce que
+vous cliquiez sur **Publier**, qui écrit le Gist. **Recharger depuis le Gist**
+fait l'inverse et jette le brouillon local.
 
-```sh
-git add -A && git commit -m "Nos dates de décembre" && git push
-```
+`#admin` n'est pas une protection : c'est une adresse que les visiteurs n'ont
+aucune raison de taper. Ce qui protège l'écriture, c'est le jeton.
 
-GitHub Actions reconstruit le site, en ligne une minute plus tard.
+## Le jeton
 
-`#admin` n'est pas une protection : c'est juste une adresse que les visiteurs
-n'ont aucune raison de taper. Le dépôt est public, tout le monde peut lire le
-code. N'y mettez donc rien de confidentiel.
+À créer une fois, sur
+<https://github.com/settings/personal-access-tokens/new> :
 
-## Modifier le calendrier à la main
+- un jeton **fine grained**, sur votre compte,
+- avec la seule permission **Account permissions → Gists : Read and write**,
+- avec une date d'expiration qui vous va.
 
-`src/data/availability.ts` est une simple liste :
+Collez-le dans le champ prévu du tableau d'administration. Il est rangé dans le
+stockage local de ce navigateur, jamais dans le site ni dans le dépôt, donc
+aucun visiteur ne le voit. Faites-le sur vos appareils, pas sur un ordinateur
+partagé. S'il fuite, le dégât se limite à vos Gists : révoquez-le sur la même
+page et créez-en un autre.
 
-```ts
-{ from: '2026-12-04', to: '2026-12-18', hosts: { mathis: true, julie: false }, room: 'free' }
+## Le format stocké
+
+```json
+{
+  "updatedAt": "2026-09-18T22:00:00.000Z",
+  "periods": [
+    { "from": "2026-12-04", "to": "2026-12-18", "hosts": { "mathis": true, "julie": false }, "room": "free" }
+  ]
+}
 ```
 
 - `from` est la première nuit passée ici.
 - `to` est la dernière nuit passée ici ; le départ a lieu le lendemain matin.
 - Pour une seule nuit, mettez deux fois la même date.
 - `hosts` dit qui est à la maison sur ces dates.
-- `room` vaut `'free'`, `'booked'` (quelqu'un vient déjà) ou `'blocked'` (la
-  chambre n'est pas disponible).
-- `note` ajoute une petite ligne sur la carte, par exemple `note: 'Ana et Tom'`.
+- `room` vaut `'free'`, `'booked'` ou `'blocked'`.
+- `note` ajoute une petite ligne sur la carte, par exemple `"Ana et Tom"`.
 
-Le calendrier affiche tous les mois jusqu'à la dernière date saisie, sans
-limite. Les dates passées disparaissent toutes seules.
+Le site relit ce fichier sans rien croire sur parole : une entrée mal formée est
+ignorée plutôt que d'abîmer la page. Le calendrier affiche tous les mois jusqu'à
+la dernière date saisie, sans limite, et les dates passées disparaissent seules.
 
 ## Changer les textes
 
 `src/config.ts` contient le titre, la phrase d'accueil, les prénoms, le nombre
-minimum de mois affichés et les encarts « Bon à savoir ».
+minimum de mois affichés et les encarts « Bon à savoir ». Un changement de texte
+passe par un `git push`, contrairement aux dates.
 
-`contactEmail` est vide exprès : le bouton copie alors le message dans le
+`contactEmail` est vide exprès : le bouton copie alors la demande dans le
 presse-papiers au lieu d'ouvrir un e-mail. Mettez une adresse si vous préférez
 recevoir des e-mails, en sachant qu'une page publique attire les spams.
 
@@ -64,12 +91,7 @@ npm run dev     # http://localhost:5173
 npm run build   # écrit dans dist/
 ```
 
-## Comment les demandes vous arrivent
-
-Personne ne peut réserver : le site n'a volontairement aucun back-end. Un
-visiteur remplit le formulaire, copie le message et vous l'envoie comme il vous
-écrit d'habitude. Vous passez la période en « Déjà prise » dans le tableau
-d'administration, vous poussez le fichier, c'est à jour.
+Un `git push` sur `main` reconstruit et redéploie le site par GitHub Actions.
 
 ## Passer à un nom de domaine
 
