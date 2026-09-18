@@ -7,6 +7,7 @@ import { buildCalendar } from './lib/calendar'
 import { fetchSnapshot } from './lib/gist'
 import { scrollToElement } from './lib/scroll'
 import { Admin } from './components/Admin'
+import { Hero } from './components/Hero'
 import { Calendar } from './components/Calendar'
 import { Legend } from './components/Legend'
 import { OpenWindows } from './components/OpenWindows'
@@ -83,18 +84,20 @@ export default function App() {
 
   return (
     <div className={isAdmin ? 'page wide' : 'page'}>
-      <header className="hero">
-        <p className="eyebrow">{config.location}</p>
-        <h1>{config.siteName}</h1>
-        {isAdmin ? (
-          <p className="tagline">Tableau de bord</p>
-        ) : (
-          <>
-            <p className="tagline">{config.tagline}</p>
-            <p className="hosts">Chez {config.hosts}</p>
-          </>
-        )}
-      </header>
+      {isAdmin ? (
+        <header className="hero hero-plain">
+          <div className="hero-text">
+            <p className="eyebrow">{config.location}</p>
+            <h1>{config.siteName}</h1>
+            <p className="tagline">Tableau de bord</p>
+          </div>
+        </header>
+      ) : (
+        <Hero>
+          <p className="tagline">{config.tagline}</p>
+          <p className="hosts">Chez {config.hosts}</p>
+        </Hero>
+      )}
 
       {isAdmin ? (
         <main>

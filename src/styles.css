@@ -16,6 +16,15 @@
   --mathis-soft: #dbe8f7;
   --julie: #a4499b;
   --julie-soft: #f6dcf2;
+  --sky-1: #ffd9a0;
+  --sky-2: #ff9f7a;
+  --sky-3: #f2766f;
+  --sun: #ffe7a4;
+  --sea-1: #2f6f86;
+  --sea-2: #1d4c63;
+  --foam: #ffffff;
+  --silhouette: #4a2b35;
+  --sand: #f3d5a2;
   --radius: 14px;
   --shadow: 0 1px 2px rgba(35, 32, 28, 0.05), 0 8px 24px rgba(35, 32, 28, 0.05);
 }
@@ -39,6 +48,15 @@
     --mathis-soft: #1b2b3f;
     --julie: #dd8ad2;
     --julie-soft: #35212f;
+    --sky-1: #2a3b63;
+    --sky-2: #6b4a72;
+    --sky-3: #b0596a;
+    --sun: #ffd9a8;
+    --sea-1: #1c3b52;
+    --sea-2: #11263a;
+    --foam: #cfe4ef;
+    --silhouette: #17111b;
+    --sand: #4a3b30;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
   }
 }
@@ -49,6 +67,7 @@
 
 body {
   margin: 0;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--ink);
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
@@ -68,11 +87,6 @@ body {
 }
 
 /* ---------- hero ---------- */
-
-.hero {
-  padding: 56px 0 32px;
-  text-align: center;
-}
 
 .eyebrow {
   margin: 0;
@@ -101,6 +115,292 @@ body {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+
+/* ---------- décor ---------- */
+
+.hero {
+  position: relative;
+  /* Pleine largeur, même si la page est centrée sur une colonne étroite. */
+  margin: 0 calc(50% - 50vw) 28px;
+  width: 100vw;
+  min-height: clamp(300px, 34vw, 680px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(to bottom, var(--sky-1) 0%, var(--sky-2) 52%, var(--sky-3) 100%);
+  /* La bande garde ses proportions : un quart de la largeur, bornes comprises. */
+  --strip: clamp(120px, 25vw, 520px);
+}
+
+/* Le sable se fond dans la page, plutôt que de s'arrêter net. */
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  pointer-events: none;
+}
+
+/* Le soleil vit en dehors du dessin : il garde ainsi sa place à toute largeur. */
+.hero-sun {
+  position: absolute;
+  top: clamp(36px, 7vw, 92px);
+  right: clamp(24px, 12vw, 200px);
+  width: clamp(72px, 9vw, 132px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--sun);
+  box-shadow: 0 0 0 clamp(14px, 2vw, 26px) color-mix(in srgb, var(--sun) 38%, transparent),
+    0 0 clamp(60px, 9vw, 130px) clamp(20px, 4vw, 60px) color-mix(in srgb, var(--sun) 55%, transparent);
+  animation: flotter 9s ease-in-out infinite;
+}
+
+.hero-scene {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--strip);
+}
+
+.hero-scene svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hero-text {
+  position: relative;
+  z-index: 1;
+  padding: clamp(48px, 6vw, 84px) 24px calc(var(--strip) + 12px);
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(30, 12, 20, 0.45);
+}
+
+.hero-text .eyebrow,
+.hero-text .tagline,
+.hero-text .hosts {
+  color: #fff;
+}
+
+.hero-text .eyebrow {
+  opacity: 0.9;
+}
+
+.hero-text .tagline {
+  opacity: 0.95;
+}
+
+.hero-text .hosts {
+  opacity: 0.85;
+}
+
+.hero-plain {
+  margin: 0 0 8px;
+  width: auto;
+  min-height: 0;
+  display: block;
+  background: none;
+}
+
+.hero-plain .hero-text {
+  padding: 56px 16px 28px;
+  color: inherit;
+  text-shadow: none;
+}
+
+.hero-plain .hero-text .eyebrow {
+  color: var(--accent);
+}
+
+.hero-plain .hero-text .tagline,
+.hero-plain .hero-text .hosts {
+  color: var(--muted);
+}
+
+/* Les silhouettes du décor */
+
+.coast,
+.pier path,
+.pier rect,
+.palm-trunk,
+.palm-frond,
+.palm-nuts {
+  fill: var(--silhouette);
+}
+
+.palm-trunk {
+  fill: var(--silhouette);
+}
+
+.glint {
+  fill: var(--sun);
+  opacity: 0.35;
+}
+
+.sand path {
+  fill: var(--sand);
+  opacity: 0.85;
+}
+
+.wave path {
+  fill: var(--foam);
+}
+
+.wave-back path {
+  opacity: 0.13;
+}
+
+.wave-mid path {
+  opacity: 0.18;
+}
+
+.wave-front path {
+  opacity: 0.26;
+}
+
+.gull {
+  fill: none;
+  stroke: var(--silhouette);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+/* Le mouvement, discret et jamais imposé */
+
+@keyframes derive {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-140px);
+  }
+}
+
+@keyframes flotter {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes balancer {
+  0%,
+  100% {
+    transform: rotate(-1.6deg);
+  }
+  50% {
+    transform: rotate(1.6deg);
+  }
+}
+
+@keyframes voler {
+  0% {
+    transform: translateX(-60px) translateY(0);
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateX(340px) translateY(-18px);
+  }
+  100% {
+    transform: translateX(760px) translateY(6px);
+    opacity: 0;
+  }
+}
+
+@keyframes monter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.wave-back {
+  animation: derive 13s linear infinite;
+}
+
+.wave-mid {
+  animation: derive 9s linear infinite;
+}
+
+.wave-front {
+  animation: derive 6s linear infinite;
+}
+
+.palm-crown {
+  /* Le balancement tourne autour de l'attache des palmes, pas du cadre entier. */
+  transform-box: fill-box;
+  transform-origin: 26% 62%;
+  animation: balancer 6s ease-in-out infinite;
+}
+
+.gull {
+  animation: voler 26s linear infinite;
+}
+
+.hero-text > * {
+  animation: monter 0.7s ease both;
+}
+
+.hero-text > *:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.hero-text > *:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.hero-text > *:nth-child(4) {
+  animation-delay: 0.24s;
+}
+
+.panel {
+  animation: monter 0.6s ease both;
+}
+
+main .panel:nth-of-type(2) {
+  animation-delay: 0.06s;
+}
+
+main .panel:nth-of-type(3) {
+  animation-delay: 0.12s;
+}
+
+main .panel:nth-of-type(4) {
+  animation-delay: 0.18s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-back,
+  .wave-mid,
+  .wave-front,
+  .hero-sun,
+  .palm-crown,
+  .gull,
+  .hero-text > *,
+  .panel {
+    animation: none;
+  }
 }
 
 /* ---------- panels ---------- */
@@ -205,6 +505,7 @@ body {
 }
 
 .day {
+  transition: background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,6 +544,7 @@ body {
 .day.open:focus-visible {
   background: var(--open);
   color: var(--accent-ink);
+  transform: scale(1.12);
 }
 
 .day.open.solo-mathis {
@@ -305,9 +607,15 @@ body {
   cursor: pointer;
 }
 
+.window {
+  transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
 .window:hover,
 .window:focus-visible {
   border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
 }
 
 .window.selected {
@@ -405,9 +713,15 @@ textarea:focus {
   cursor: pointer;
 }
 
-.button:hover,
+.button {
+  transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.button:hover:not(:disabled),
 .button:focus-visible {
   border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
 }
 
 .button.primary {

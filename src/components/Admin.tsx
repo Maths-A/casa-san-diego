@@ -63,7 +63,10 @@ export function Admin() {
   // Le premier chargement du Gist arrive après quelques centaines de
   // millisecondes : il ne doit pas écraser ce qui a été saisi entre-temps.
   const touched = useRef(false)
-  const [hadDraft] = useState(() => loadDraft() !== null || readLocal(RECIPIENTS_KEY) !== null)
+  // Les deux brouillons sont indépendants : avoir saisi une adresse ne doit pas
+  // empêcher le calendrier publié d'arriver dans la table.
+  const [hadDraft] = useState(() => loadDraft() !== null)
+  const [hadRecipientsDraft] = useState(() => readLocal(RECIPIENTS_KEY) !== null)
   const [recipients, setRecipients] = useState<string[]>(() => {
     const raw = readLocal(RECIPIENTS_KEY)
     if (!raw) return []
@@ -141,10 +144,8 @@ export function Admin() {
         setPublished(snapshot.periods)
         setPublishedRecipients(snapshot.recipients)
         setUpdatedAt(snapshot.updatedAt)
-        if (!hadDraft && !touched.current) {
-          setRows(snapshot.periods)
-          setRecipients(snapshot.recipients)
-        }
+        if (!hadDraft && !touched.current) setRows(snapshot.periods)
+        if (!hadRecipientsDraft && !touched.current) setRecipients(snapshot.recipients)
         report('Calendrier chargé depuis le Gist.')
       })
       .catch((error: Error) => {
