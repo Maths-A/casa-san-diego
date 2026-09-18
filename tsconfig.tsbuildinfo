@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/config.ts","./src/main.tsx","./src/components/calendar.tsx","./src/components/legend.tsx","./src/components/openwindows.tsx","./src/components/requestform.tsx","./src/data/availability.ts","./src/lib/dates.ts","./vite.config.ts"],"version":"5.9.3"}
