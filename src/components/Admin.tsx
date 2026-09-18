@@ -89,6 +89,10 @@ export function Admin() {
     () => recipients.map((entry) => entry.trim()).filter(isRecipient),
     [recipients],
   )
+  // Ce que voient les visiteurs, ce sont les adresses publiées, pas celles
+  // saisies ici : la différence mérite d'être dite franchement.
+  const mailLive = publishedRecipients.length > 0
+  const mailPending = valid.join(',') !== publishedRecipients.join(',')
   const dirty =
     published === null ||
     periodsKey(rows) !== periodsKey(published) ||
@@ -421,10 +425,7 @@ export function Admin() {
             </li>
           ))}
           {recipients.length === 0 && (
-            <li className="warn">
-              Aucune adresse : le bouton des visiteurs copie leur demande au lieu de vous
-              l&rsquo;envoyer.
-            </li>
+            <li className="derived">Aucune adresse pour l&rsquo;instant.</li>
           )}
         </ul>
 
@@ -439,7 +440,30 @@ export function Admin() {
           <button className="button" onClick={sendTest} disabled={busy || valid.length === 0}>
             Envoyer un essai
           </button>
+          <button
+            className="button primary"
+            onClick={publish}
+            disabled={busy || !gistId || !token || !dirty}
+          >
+            {busy ? 'En cours…' : 'Publier'}
+          </button>
         </div>
+
+        {mailPending ? (
+          <p className="warn">
+            {valid.length === 0
+              ? 'Ces adresses ne sont pas valables : les visiteurs continueront de copier leur demande.'
+              : 'Ces adresses ne sont pas encore en ligne. Tant que vous n\u2019avez pas publié, le bouton des visiteurs copie leur demande au lieu de vous l\u2019envoyer.'}
+          </p>
+        ) : (
+          <p className="hint">
+            {mailLive
+              ? `En ligne : ${publishedRecipients.join(', ')} ${
+                  publishedRecipients.length > 1 ? 'reçoivent' : 'reçoit'
+                } les demandes des visiteurs.`
+              : 'Aucune adresse en ligne : le bouton des visiteurs copie leur demande.'}
+          </p>
+        )}
 
         {mailMessage && <p className={mailFailed ? 'warn' : 'hint'}>{mailMessage}</p>}
 
