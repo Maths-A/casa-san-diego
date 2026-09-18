@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { HostKey, Period, RoomState } from '../data/types'
 import { config } from '../config'
 import { addDays, formatRange, nights, parseISO, toISO, today } from '../lib/dates'
 import { HOST_KEYS, guestStatus, roomLabel, statusLabel } from '../lib/status'
-import { createGist, fetchSnapshot, periodsKey, saveSnapshot, writeSnapshot } from '../lib/gist'
+import { createGist, fetchSnapshot, isRecipient, periodsKey, saveSnapshot } from '../lib/gist'
+import { MailError, sendRequest } from '../lib/mail'
 
 const DRAFT_KEY = 'casa-san-diego:brouillon'
 const TOKEN_KEY = 'casa-san-diego:jeton'
 const GIST_KEY = 'casa-san-diego:gist'
+const RECIPIENTS_KEY = 'casa-san-diego:destinataires'
+const MAX_RECIPIENTS = 5
 const ROOM_STATES: RoomState[] = ['free', 'booked', 'blocked']
 
 /** Le stockage du navigateur peut être refusé : aucune lecture ne doit casser la page. */
@@ -54,20 +57,50 @@ export function Admin() {
   // Retenu au montage : l'effet qui sauvegarde le brouillon écrit dès le
   // premier rendu, donc plus tard on ne saurait plus distinguer un vrai
   // brouillon d'un tableau vide qui vient d'être enregistré.
-  const [hadDraft] = useState(() => loadDraft() !== null)
+  // Le premier chargement du Gist arrive après quelques centaines de
+  // millisecondes : il ne doit pas écraser ce qui a été saisi entre-temps.
+  const touched = useRef(false)
+  const [hadDraft] = useState(() => loadDraft() !== null || readLocal(RECIPIENTS_KEY) !== null)
+  const [recipients, setRecipients] = useState<string[]>(() => {
+    const raw = readLocal(RECIPIENTS_KEY)
+    if (!raw) return []
+    try {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? parsed.filter((e): e is string => typeof e === 'string') : []
+    } catch {
+      return []
+    }
+  })
   const [published, setPublished] = useState<Period[] | null>(null)
+  const [publishedRecipients, setPublishedRecipients] = useState<string[]>([])
   const [updatedAt, setUpdatedAt] = useState<string | null>(null)
   const [gistId, setGistId] = useState<string>(() => config.gistId || readLocal(GIST_KEY) || '')
   const [token, setToken] = useState<string>(() => readLocal(TOKEN_KEY) ?? '')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
+  // Le panneau des adresses a son propre retour, sous le bouton qui le produit.
+  const [mailMessage, setMailMessage] = useState<string | null>(null)
+  const [mailFailed, setMailFailed] = useState(false)
 
   const start = useMemo(() => today(), [])
   const clashes = useMemo(() => overlaps(rows), [rows])
-  const dirty = published === null || periodsKey(rows) !== periodsKey(published)
+  const valid = useMemo(
+    () => recipients.map((entry) => entry.trim()).filter(isRecipient),
+    [recipients],
+  )
+  const dirty =
+    published === null ||
+    periodsKey(rows) !== periodsKey(published) ||
+    recipients.join(',') !== publishedRecipients.join(',')
+
+  function edit<T>(update: (current: T) => T, setter: (fn: (current: T) => T) => void) {
+    touched.current = true
+    setter(update)
+  }
 
   useEffect(() => writeLocal(DRAFT_KEY, JSON.stringify(rows)), [rows])
+  useEffect(() => writeLocal(RECIPIENTS_KEY, JSON.stringify(recipients)), [recipients])
   useEffect(() => writeLocal(GIST_KEY, gistId), [gistId])
   useEffect(() => writeLocal(TOKEN_KEY, token), [token])
 
@@ -95,8 +128,12 @@ export function Admin() {
       .then((snapshot) => {
         if (cancelled) return
         setPublished(snapshot.periods)
+        setPublishedRecipients(snapshot.recipients)
         setUpdatedAt(snapshot.updatedAt)
-        if (!hadDraft) setRows(snapshot.periods)
+        if (!hadDraft && !touched.current) {
+          setRows(snapshot.periods)
+          setRecipients(snapshot.recipients)
+        }
         report('Calendrier chargé depuis le Gist.')
       })
       .catch((error: Error) => {
@@ -113,6 +150,8 @@ export function Admin() {
     run(async () => {
       const snapshot = await fetchSnapshot(gistId)
       setPublished(snapshot.periods)
+      setPublishedRecipients(snapshot.recipients)
+      setRecipients(snapshot.recipients)
       setUpdatedAt(snapshot.updatedAt)
       setRows(snapshot.periods)
       report('Brouillon remplacé par ce qui est en ligne.')
@@ -120,8 +159,10 @@ export function Admin() {
 
   const publish = () =>
     run(async () => {
-      const snapshot = await saveSnapshot(gistId, token, rows)
+      const snapshot = await saveSnapshot(gistId, token, rows, recipients)
       setPublished(snapshot.periods)
+      setPublishedRecipients(snapshot.recipients)
+      setRecipients(snapshot.recipients)
       setUpdatedAt(snapshot.updatedAt)
       setRows(snapshot.periods)
       report('Publié. Les visiteurs le voient dès maintenant.')
@@ -129,14 +170,40 @@ export function Admin() {
 
   const create = () =>
     run(async () => {
-      const id = await createGist(token, rows)
+      const id = await createGist(token, rows, recipients)
       setGistId(id)
       setPublished(rows)
       report(`Gist créé. Collez ${id} dans gistId, côté src/config.ts, puis poussez une fois.`)
     })
 
+  const sendTest = () =>
+    run(async () => {
+      setMailMessage(null)
+      try {
+        const to = await sendRequest(valid, {
+          name: 'Essai depuis le tableau de bord',
+          email: '',
+          people: '2',
+          arrive: '',
+          leave: '',
+          note: 'Si vous lisez ceci, les demandes des visiteurs vous arriveront bien.',
+          dates: '',
+        })
+        setMailMessage(`Essai envoyé à ${to}. Regardez votre boîte.`)
+        setMailFailed(false)
+      } catch (error) {
+        if (error instanceof MailError) {
+          setMailMessage(error.message)
+          setMailFailed(true)
+          return
+        }
+        throw error
+      }
+    })
+
   function download() {
-    const url = URL.createObjectURL(new Blob([writeSnapshot(rows)], { type: 'application/json' }))
+    const backup = JSON.stringify({ recipients, periods: rows }, null, 2)
+    const url = URL.createObjectURL(new Blob([backup], { type: 'application/json' }))
     const link = document.createElement('a')
     link.href = url
     link.download = config.gistFile
@@ -145,22 +212,37 @@ export function Admin() {
   }
 
   function patch(index: number, change: Partial<Period>) {
-    setRows((current) => current.map((row, i) => (i === index ? { ...row, ...change } : row)))
+    edit<Period[]>(
+      (current) => current.map((row, i) => (i === index ? { ...row, ...change } : row)),
+      setRows,
+    )
   }
 
   function setHost(index: number, host: HostKey, value: boolean) {
-    setRows((current) =>
-      current.map((row, i) => (i === index ? { ...row, hosts: { ...row.hosts, [host]: value } } : row)),
+    edit<Period[]>(
+      (current) =>
+        current.map((row, i) =>
+          i === index ? { ...row, hosts: { ...row.hosts, [host]: value } } : row,
+        ),
+      setRows,
     )
   }
 
   function addRow() {
     const last = rows.length > 0 ? rows[rows.length - 1].to : null
     const from = last ? toISO(addDays(parseISO(last), 2)) : toISO(start)
-    setRows((current) => [
-      ...current,
-      { from, to: toISO(addDays(parseISO(from), 2)), hosts: { mathis: true, julie: true }, room: 'free' },
-    ])
+    edit<Period[]>(
+      (current) => [
+        ...current,
+        {
+          from,
+          to: toISO(addDays(parseISO(from), 2)),
+          hosts: { mathis: true, julie: true },
+          room: 'free',
+        },
+      ],
+      setRows,
+    )
   }
 
   const publishedAt = updatedAt
@@ -257,7 +339,9 @@ export function Admin() {
                     <td>
                       <button
                         className="link-button"
-                        onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
+                        onClick={() =>
+                          edit<Period[]>((current) => current.filter((_, i) => i !== index), setRows)
+                        }
                         aria-label={`Supprimer la période ${row.from} au ${row.to}`}
                       >
                         Supprimer
@@ -306,6 +390,74 @@ export function Admin() {
             fusionner.
           </p>
         )}
+      </section>
+
+      <section className="panel">
+        <h2>Recevoir les demandes</h2>
+        <p className="request-lead">
+          Les adresses à qui arrivent les demandes des visiteurs. La première reçoit, les autres
+          sont en copie. Sans adresse, le visiteur ne peut que copier sa demande et vous l&rsquo;envoyer
+          lui-même.
+        </p>
+
+        <ul className="recipients">
+          {recipients.map((entry, index) => (
+            <li key={index}>
+              <input
+                value={entry}
+                spellCheck={false}
+                onChange={(e) =>
+                  edit<string[]>(
+                    (current) => current.map((old, i) => (i === index ? e.target.value : old)),
+                    setRecipients,
+                  )
+                }
+                placeholder={index === 0 ? 'julie@exemple.fr' : 'en copie'}
+                aria-label={index === 0 ? 'Adresse principale' : `Adresse en copie ${index}`}
+              />
+              {entry.trim() && !isRecipient(entry) && (
+                <span className="warn">adresse ou alias incomplet</span>
+              )}
+              <button
+                className="link-button"
+                onClick={() =>
+                  edit<string[]>((current) => current.filter((_, i) => i !== index), setRecipients)
+                }
+              >
+                Retirer
+              </button>
+            </li>
+          ))}
+          {recipients.length === 0 && (
+            <li className="derived">Aucune adresse pour l&rsquo;instant.</li>
+          )}
+        </ul>
+
+        <div className="actions">
+          <button
+            className="button"
+            onClick={() => edit<string[]>((current) => [...current, ''], setRecipients)}
+            disabled={recipients.length >= MAX_RECIPIENTS}
+          >
+            Ajouter une adresse
+          </button>
+          <button className="button" onClick={sendTest} disabled={busy || valid.length === 0}>
+            Envoyer un essai
+          </button>
+        </div>
+
+        {mailMessage && <p className={mailFailed ? 'warn' : 'hint'}>{mailMessage}</p>}
+
+        <p className="hint">
+          La première demande envoyée à une adresse déclenche un e-mail d&rsquo;activation de
+          FormSubmit. Ouvrez-le une fois, puis tout arrive directement. L&rsquo;essai ci-dessus sert
+          justement à le déclencher quand vous voulez, plutôt qu&rsquo;au premier visiteur.
+        </p>
+        <p className="hint">
+          FormSubmit vous donne aussi un alias, une suite de lettres et de chiffres qui remplace
+          l&rsquo;adresse. Collez-le ici à la place : votre adresse reste alors hors du Gist, donc
+          hors de portée des robots. Pensez à publier pour que les visiteurs en profitent.
+        </p>
       </section>
 
       <section className="panel">

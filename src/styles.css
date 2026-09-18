@@ -563,3 +563,40 @@ a {
   margin-top: 24px;
   justify-content: center;
 }
+
+/* Le piège à robots : présent dans la page, invisible à l'œil. */
+.fields .trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ---------- destinataires ---------- */
+
+.recipients {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.recipients li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+
+.recipients li:first-child {
+  border-top: none;
+}
+
+.recipients input {
+  max-width: 340px;
+}
+
+.recipients .warn {
+  margin: 0;
+}

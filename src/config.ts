@@ -21,13 +21,6 @@ export const config = {
   location: 'San Diego, Californie',
 
   /**
-   * Optionnel. Si tu mets une adresse ici, le bouton ouvre un e-mail déjà
-   * rempli. Laisse la chaîne vide pour proposer plutôt une copie du message,
-   * ce qui évite d'exposer ton adresse sur une page publique.
-   */
-  contactEmail: '',
-
-  /**
    * Le Gist secret qui contient le calendrier. C'est la seule source de
    * vérité : la page des visiteurs le lit à chaque chargement, et le tableau
    * d'administration l'écrit. Son contenu est lisible par qui connaît cet

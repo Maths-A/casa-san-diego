@@ -1,22 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Period } from '../data/types'
-import { config } from '../config'
 import { addDays, formatDay, parseISO, toISO } from '../lib/dates'
+import { MailError, sendRequest } from '../lib/mail'
 
 interface Props {
   selected: Period | null
   start: Date
+  /** Qui reçoit la demande. Vide : on se rabat sur le presse-papiers. */
+  recipients: string[]
 }
 
-type CopyState = 'idle' | 'copied' | 'manual'
+type Sending = 'idle' | 'sending' | 'sent' | 'copied' | 'failed'
 
-export function RequestForm({ selected, start }: Props) {
+export function RequestForm({ selected, start, recipients }: Props) {
   const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [people, setPeople] = useState('2')
   const [arrive, setArrive] = useState('')
   const [leave, setLeave] = useState('')
   const [note, setNote] = useState('')
-  const [copyState, setCopyState] = useState<CopyState>('idle')
+  const [trap, setTrap] = useState('')
+  const [state, setState] = useState<Sending>('idle')
+  const [problem, setProblem] = useState<string | null>(null)
 
   // Choisir une période au calendrier remplit les dates, que le visiteur peut
   // ensuite resserrer sur une partie seulement.
@@ -24,7 +29,7 @@ export function RequestForm({ selected, start }: Props) {
     if (!selected) return
     setArrive(selected.from)
     setLeave(toISO(addDays(parseISO(selected.to), 1)))
-    setCopyState('idle')
+    setState('idle')
   }, [selected])
 
   const lastNight = leave ? toISO(addDays(parseISO(leave), -1)) : ''
@@ -33,34 +38,84 @@ export function RequestForm({ selected, start }: Props) {
     selected && arrive && lastNight && (arrive < selected.from || lastNight > selected.to),
   )
 
+  const dates =
+    arrive && leave ? `du ${formatDay(arrive, start)} au ${formatDay(leave, start)}` : ''
+
   const message = useMemo(() => {
-    const who = name.trim() ? `Bonjour, c’est ${name.trim()}.` : 'Bonjour !'
     const lines = [
-      who,
-      arrive && leave
-        ? `On aimerait venir du ${formatDay(arrive, start)} au ${formatDay(leave, start)}.`
-        : 'On aimerait venir vous voir.',
+      name.trim() ? `Bonjour, c’est ${name.trim()}.` : 'Bonjour !',
+      dates ? `On aimerait venir ${dates}.` : 'On aimerait venir vous voir.',
       `On serait ${people}.`,
     ]
+    if (email.trim()) lines.push(`Vous pouvez répondre à ${email.trim()}.`)
     if (note.trim()) lines.push(note.trim())
     return lines.join('\n')
-  }, [name, people, arrive, leave, note, start])
+  }, [name, email, people, dates, note])
 
-  const mailto = config.contactEmail
-    ? `mailto:${config.contactEmail}?subject=${encodeURIComponent(
-        `Venir chez vous${arrive ? ` à partir du ${arrive}` : ''}`,
-      )}&body=${encodeURIComponent(message)}`
-    : null
-
-  async function copy() {
+  async function copy(): Promise<boolean> {
     try {
-      await navigator.clipboard.writeText(message)
-      setCopyState('copied')
+      // Chrome suspend l'écriture tant que la page n'a pas le focus, sans
+      // jamais rejeter : sans ce délai, le bouton resterait muet pour toujours.
+      await Promise.race([
+        navigator.clipboard.writeText(message),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('délai')), 2000)),
+      ])
+      return true
     } catch {
-      // Le presse-papiers est bloqué hors contexte sécurisé et dans certains
-      // navigateurs : on affiche alors le texte pour une copie à la main.
-      setCopyState('manual')
+      // Presse-papiers refusé ou hors délai : on le dira plutôt que de laisser
+      // croire que la demande est partie.
+      return false
     }
+  }
+
+  async function submit() {
+    // Le piège à robots : un humain ne remplit pas un champ qu'il ne voit pas.
+    if (trap) {
+      setState('sent')
+      return
+    }
+    setProblem(null)
+    setState('sending')
+
+    if (recipients.length === 0) {
+      const copied = await copy()
+      setProblem('Aucune adresse n’est configurée pour recevoir la demande.')
+      setState(copied ? 'copied' : 'failed')
+      return
+    }
+
+    try {
+      await sendRequest(recipients, {
+        name: name.trim(),
+        email: email.trim(),
+        people,
+        arrive,
+        leave,
+        note: note.trim(),
+        dates,
+      })
+      setState('sent')
+    } catch (error) {
+      setProblem(error instanceof MailError ? error.message : 'L’envoi a échoué.')
+      setState((await copy()) ? 'copied' : 'failed')
+    }
+  }
+
+  if (state === 'sent') {
+    return (
+      <div className="request">
+        <h2>C&rsquo;est parti</h2>
+        <p className="request-lead">
+          Votre demande nous est arrivée. On vous répond vite. Rien n&rsquo;est réservé tant
+          qu&rsquo;on n&rsquo;a pas répondu.
+        </p>
+        <div className="actions">
+          <button className="button" onClick={() => setState('idle')}>
+            Demander d&rsquo;autres dates
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -76,6 +131,15 @@ export function RequestForm({ selected, start }: Props) {
         <label>
           Votre nom
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ana et Tom" />
+        </label>
+        <label>
+          Votre e-mail, pour la réponse
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="ana@exemple.fr"
+          />
         </label>
         <label>
           Vous êtes combien
@@ -104,6 +168,10 @@ export function RequestForm({ selected, start }: Props) {
             placeholder="On atterrit à 21h, et l'un de nous est allergique aux chats."
           />
         </label>
+        <label className="trap" aria-hidden="true">
+          Laissez ce champ vide
+          <input tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} />
+        </label>
       </div>
 
       {datesOutOfOrder && <p className="warn">Le départ doit venir après l&rsquo;arrivée.</p>}
@@ -114,25 +182,29 @@ export function RequestForm({ selected, start }: Props) {
       )}
 
       <div className="actions">
-        {mailto ? (
-          <a className="button primary" href={mailto}>
-            Envoyer la demande
-          </a>
-        ) : (
-          <button className="button primary" onClick={copy}>
-            {copyState === 'copied' ? 'Demande copiée' : 'Envoyer la demande'}
-          </button>
-        )}
+        <button
+          className="button primary"
+          onClick={submit}
+          disabled={state === 'sending' || datesOutOfOrder}
+        >
+          {state === 'sending' ? 'Envoi…' : 'Envoyer la demande'}
+        </button>
       </div>
 
-      {copyState === 'copied' && (
-        <p className="hint">Votre demande est dans le presse-papiers, envoyez-la nous.</p>
-      )}
-      {copyState === 'manual' && (
+      {problem && <p className="warn">{problem}</p>}
+      {state === 'copied' && (
         <p className="hint">
-          Votre navigateur a bloqué le presse-papiers. Écrivez-nous directement, en nous donnant vos
-          dates.
+          Votre demande est dans le presse-papiers : envoyez-la nous par message, elle ne sera pas
+          perdue.
         </p>
+      )}
+      {state === 'failed' && (
+        <p className="hint">
+          Écrivez-nous directement en nous donnant vos dates, on s&rsquo;en occupe.
+        </p>
+      )}
+      {recipients.length > 0 && state === 'idle' && (
+        <p className="hint">Votre demande nous arrive par e-mail, via le service FormSubmit.</p>
       )}
     </div>
   )

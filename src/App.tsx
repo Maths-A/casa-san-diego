@@ -23,7 +23,7 @@ function useIsAdmin(): boolean {
 
 type Load =
   | { state: 'loading' }
-  | { state: 'ready'; periods: Period[] }
+  | { state: 'ready'; periods: Period[]; recipients: string[] }
   | { state: 'error'; message: string }
 
 /** Le calendrier vient du Gist, relu à chaque chargement de la page. */
@@ -38,7 +38,9 @@ function useCalendar(): Load {
     let cancelled = false
     fetchSnapshot(config.gistId)
       .then((snapshot) => {
-        if (!cancelled) setLoad({ state: 'ready', periods: snapshot.periods })
+        if (!cancelled) {
+          setLoad({ state: 'ready', periods: snapshot.periods, recipients: snapshot.recipients })
+        }
       })
       .catch((error: Error) => {
         if (!cancelled) setLoad({ state: 'error', message: error.message })
@@ -56,6 +58,7 @@ export default function App() {
   const load = useCalendar()
   const start = useMemo(() => today(), [])
   const periods = load.state === 'ready' ? load.periods : []
+  const recipients = load.state === 'ready' ? load.recipients : []
   const visible = useMemo(() => upcoming(periods, start), [periods, start])
   const dayIndex = useMemo(() => buildDayIndex(visible), [visible])
   const [selected, setSelected] = useState<Period | null>(null)
@@ -129,7 +132,7 @@ export default function App() {
           )}
 
           <section className="panel" id="ask">
-            <RequestForm selected={selected} start={start} />
+            <RequestForm selected={selected} start={start} recipients={recipients} />
           </section>
 
           <section className="panel">

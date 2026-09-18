@@ -9,8 +9,29 @@ const NOTE_MAX = 120
 
 export interface Snapshot {
   periods: Period[]
+  /** Qui reçoit les demandes par e-mail. Le premier est le destinataire. */
+  recipients: string[]
   /** Quand le Gist a été publié pour la dernière fois, si on le sait. */
   updatedAt: string | null
+}
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+/** FormSubmit rend un alias qui remplace l'adresse, pour ne pas l'exposer. */
+const ALIAS = /^[a-z0-9]{16,64}$/i
+const MAX_RECIPIENTS = 5
+
+export function isRecipient(value: string): boolean {
+  const trimmed = value.trim()
+  return EMAIL.test(trimmed) || ALIAS.test(trimmed)
+}
+
+function readRecipients(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter((entry): entry is string => typeof entry === 'string')
+    .map((entry) => entry.trim())
+    .filter(isRecipient)
+    .slice(0, MAX_RECIPIENTS)
 }
 
 /**
@@ -45,15 +66,22 @@ function readPeriod(raw: unknown): Period | null {
 
 export function readSnapshot(text: string): Snapshot {
   const parsed: unknown = JSON.parse(text)
-  const body = Array.isArray(parsed) ? { periods: parsed, updatedAt: null } : parsed
-  if (typeof body !== 'object' || body === null) return { periods: [], updatedAt: null }
+  const body = Array.isArray(parsed) ? { periods: parsed } : parsed
+  if (typeof body !== 'object' || body === null) {
+    return { periods: [], recipients: [], updatedAt: null }
+  }
 
-  const { periods, updatedAt } = body as { periods?: unknown; updatedAt?: unknown }
+  const { periods, recipients, updatedAt } = body as {
+    periods?: unknown
+    recipients?: unknown
+    updatedAt?: unknown
+  }
   return {
     periods: (Array.isArray(periods) ? periods : [])
       .map(readPeriod)
       .filter((period): period is Period => period !== null)
       .sort((a, b) => a.from.localeCompare(b.from)),
+    recipients: readRecipients(recipients),
     updatedAt: typeof updatedAt === 'string' ? updatedAt : null,
   }
 }
@@ -71,9 +99,10 @@ export function periodsKey(periods: Period[]): string {
   )
 }
 
-export function writeSnapshot(periods: Period[]): string {
+export function writeSnapshot(periods: Period[], recipients: string[]): string {
   const body = {
     updatedAt: new Date().toISOString(),
+    recipients: recipients.map((entry) => entry.trim()).filter(isRecipient).slice(0, MAX_RECIPIENTS),
     periods: [...periods].sort((a, b) => a.from.localeCompare(b.from)),
   }
   return `${JSON.stringify(body, null, 2)}\n`
@@ -118,25 +147,36 @@ export async function fetchSnapshot(gistId: string, token?: string): Promise<Sna
   return readSnapshot(fileContent(await response.json(), config.gistFile))
 }
 
-export async function saveSnapshot(gistId: string, token: string, periods: Period[]): Promise<Snapshot> {
+export async function saveSnapshot(
+  gistId: string,
+  token: string,
+  periods: Period[],
+  recipients: string[],
+): Promise<Snapshot> {
   const response = await fetch(`${API}/${gistId}`, {
     method: 'PATCH',
     headers: { ...headers(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ files: { [config.gistFile]: { content: writeSnapshot(periods) } } }),
+    body: JSON.stringify({
+      files: { [config.gistFile]: { content: writeSnapshot(periods, recipients) } },
+    }),
   })
   if (!response.ok) throw await explain(response)
   return readSnapshot(fileContent(await response.json(), config.gistFile))
 }
 
 /** Crée le Gist secret la première fois, et rend son identifiant. */
-export async function createGist(token: string, periods: Period[]): Promise<string> {
+export async function createGist(
+  token: string,
+  periods: Period[],
+  recipients: string[],
+): Promise<string> {
   const response = await fetch(API, {
     method: 'POST',
     headers: { ...headers(token), 'Content-Type': 'application/json' },
     body: JSON.stringify({
       description: 'Casa San Diego : le calendrier de la chambre d’amis',
       public: false,
-      files: { [config.gistFile]: { content: writeSnapshot(periods) } },
+      files: { [config.gistFile]: { content: writeSnapshot(periods, recipients) } },
     }),
   })
   if (!response.ok) throw await explain(response)

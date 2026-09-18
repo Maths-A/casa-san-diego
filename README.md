@@ -36,6 +36,34 @@ fait l'inverse et jette le brouillon local.
 `#admin` n'est pas une protection : c'est une adresse que les visiteurs n'ont
 aucune raison de taper. Ce qui protège l'écriture, c'est le jeton.
 
+## Recevoir les demandes par e-mail
+
+Le panneau « Recevoir les demandes » du tableau d'administration contient les
+adresses à qui arrivent les demandes des visiteurs. La première reçoit, les
+suivantes sont en copie, cinq au maximum. Elles sont publiées dans le Gist en
+même temps que le calendrier.
+
+L'envoi passe par [FormSubmit](https://formsubmit.co), qui transforme un envoi
+de formulaire en e-mail. Il n'y a pas de compte à créer :
+
+1. Ajoutez votre adresse et cliquez sur **Envoyer un essai**.
+2. FormSubmit vous envoie un e-mail d'activation. Ouvrez le lien qu'il contient.
+3. Renvoyez un essai pour vérifier, puis **Publiez** pour que les visiteurs en
+   profitent.
+
+L'e-mail que vous recevez contient le nom, le nombre de personnes, les dates et
+le message. Si le visiteur a laissé son adresse, une réponse lui parvient
+directement.
+
+FormSubmit vous donne aussi un alias, une suite de lettres et de chiffres qui
+remplace l'adresse. Collez-le dans le champ à la place de l'adresse : votre
+adresse reste alors hors du Gist, donc hors de portée des robots.
+
+Le formulaire porte un champ piège, invisible à l'écran, qui absorbe les robots
+remplissant tout ce qu'ils trouvent. Si l'envoi échoue malgré tout, la demande
+est copiée dans le presse-papiers du visiteur et la page le lui dit, pour que
+rien ne se perde.
+
 ## Le jeton
 
 À créer une fois, sur
@@ -56,6 +84,7 @@ page et créez-en un autre.
 ```json
 {
   "updatedAt": "2026-09-18T22:00:00.000Z",
+  "recipients": ["julie@exemple.fr"],
   "periods": [
     { "from": "2026-12-04", "to": "2026-12-18", "hosts": { "mathis": true, "julie": false }, "room": "free" }
   ]
@@ -81,10 +110,6 @@ et le bouton « Voir plus loin » en ajoute autant à chaque clic.
 `src/config.ts` contient le titre, la phrase d'accueil, les prénoms, l'horizon
 du calendrier et les encarts « Bon à savoir ». Un changement de texte
 passe par un `git push`, contrairement aux dates.
-
-`contactEmail` est vide exprès : le bouton copie alors la demande dans le
-presse-papiers au lieu d'ouvrir un e-mail. Mettez une adresse si vous préférez
-recevoir des e-mails, en sachant qu'une page publique attire les spams.
 
 ## Lancer le site en local
 
