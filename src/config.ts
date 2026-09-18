@@ -6,7 +6,7 @@ export const config = {
   siteName: 'Casa San Diego',
 
   /** Qui reçoit, tel qu'affiché en haut de la page. */
-  hosts: 'Mathis et Julie',
+  hosts: 'les Doudous',
 
   /** Les prénoms utilisés dans le tableau d'administration. */
   hostNames: {
@@ -15,7 +15,7 @@ export const config = {
   },
 
   /** La phrase d'accueil, sous le titre. */
-  tagline: 'On s’installe à San Diego. Venez nous voir.',
+  tagline: 'Disponibilités de notre appartement',
 
   /** Ville ou quartier. Garde l'adresse exacte en dehors d'une page publique. */
   location: 'San Diego, Californie',
@@ -39,20 +39,20 @@ export const config = {
   /** Les encarts « Bon à savoir ». Modifie-les librement. */
   practicalInfo: [
     {
-      title: 'La chambre',
-      body: 'Une chambre pour vous seuls, lit double, serviettes propres et un ventilateur. La salle de bain est partagée avec nous.',
+      title: 'L’appartement',
+      body: 'Un canapé lit est disponible + deux matelas gonflable de 2 places.',
     },
     {
       title: 'Pour venir',
-      body: 'L’aéroport de San Diego (SAN) est à vingt minutes. Dites-nous votre vol, on vient vous chercher.',
+      body: 'L’aéroport de San Diego (SAN) est à 15 minutes. Vol direct depuis Amsterdam, Londres et Munich. Vol direct possible jusqu’à Los Angles.',
     },
     {
-      title: 'Arrivées et départs',
-      body: 'Arrivée à partir de 16h, départ avant 11h le dernier jour. Dites-le nous s’il vous faut autre chose.',
+      title: 'Activités',
+      body: 'Surf, Plage, Randonnées',
     },
     {
-      title: 'À la maison',
-      body: 'On enlève les chaussures en entrant, on travaille jusqu’à 18h en semaine, et le café est à vous.',
+      title: 'Non autorisé',
+      body: 'Les problèmes',
     },
   ],
 
