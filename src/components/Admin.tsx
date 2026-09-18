@@ -3,7 +3,7 @@ import type { HostKey, Period, RoomState } from '../data/types'
 import { config } from '../config'
 import { addDays, formatRange, nights, parseISO, toISO, today } from '../lib/dates'
 import { HOST_KEYS, guestStatus, roomLabel, statusLabel } from '../lib/status'
-import { createGist, fetchSnapshot, saveSnapshot, writeSnapshot } from '../lib/gist'
+import { createGist, fetchSnapshot, periodsKey, saveSnapshot, writeSnapshot } from '../lib/gist'
 
 const DRAFT_KEY = 'casa-san-diego:brouillon'
 const TOKEN_KEY = 'casa-san-diego:jeton'
@@ -51,6 +51,10 @@ function overlaps(periods: Period[]): [number, number][] {
 
 export function Admin() {
   const [rows, setRows] = useState<Period[]>(() => loadDraft() ?? [])
+  // Retenu au montage : l'effet qui sauvegarde le brouillon écrit dès le
+  // premier rendu, donc plus tard on ne saurait plus distinguer un vrai
+  // brouillon d'un tableau vide qui vient d'être enregistré.
+  const [hadDraft] = useState(() => loadDraft() !== null)
   const [published, setPublished] = useState<Period[] | null>(null)
   const [updatedAt, setUpdatedAt] = useState<string | null>(null)
   const [gistId, setGistId] = useState<string>(() => config.gistId || readLocal(GIST_KEY) || '')
@@ -61,7 +65,7 @@ export function Admin() {
 
   const start = useMemo(() => today(), [])
   const clashes = useMemo(() => overlaps(rows), [rows])
-  const dirty = published === null || writeSnapshot(rows) !== writeSnapshot(published)
+  const dirty = published === null || periodsKey(rows) !== periodsKey(published)
 
   useEffect(() => writeLocal(DRAFT_KEY, JSON.stringify(rows)), [rows])
   useEffect(() => writeLocal(GIST_KEY, gistId), [gistId])
@@ -92,7 +96,7 @@ export function Admin() {
         if (cancelled) return
         setPublished(snapshot.periods)
         setUpdatedAt(snapshot.updatedAt)
-        if (!loadDraft()) setRows(snapshot.periods)
+        if (!hadDraft) setRows(snapshot.periods)
         report('Calendrier chargé depuis le Gist.')
       })
       .catch((error: Error) => {

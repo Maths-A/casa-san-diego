@@ -58,6 +58,19 @@ export function readSnapshot(text: string): Snapshot {
   }
 }
 
+/**
+ * Une empreinte des périodes seules, pour comparer un brouillon à ce qui est
+ * publié. Le contenu écrit porte un horodatage, qui change à chaque appel et
+ * ne peut donc pas servir de comparaison.
+ */
+export function periodsKey(periods: Period[]): string {
+  return JSON.stringify(
+    [...periods]
+      .sort((a, b) => a.from.localeCompare(b.from))
+      .map((p) => [p.from, p.to, p.hosts.mathis, p.hosts.julie, p.room, p.note?.trim() ?? '']),
+  )
+}
+
 export function writeSnapshot(periods: Period[]): string {
   const body = {
     updatedAt: new Date().toISOString(),
