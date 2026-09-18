@@ -9,7 +9,7 @@ En ligne sur **https://maths-a.github.io/casa-san-diego/**
 
 Dans un **Gist secret**, pas dans ce dépôt. La page des visiteurs le lit à
 chaque chargement, sans jeton, et le tableau d'administration l'écrit. Une
-modification est donc visible en une minute environ, sans reconstruire le site.
+modification est donc en ligne en quelques minutes, sans reconstruire le site.
 
 Son identifiant est dans `gistId`, côté `src/config.ts`. Le dépôt ne contient
 aucune date : il ne contient que le code. Pour repartir d'un autre Gist, créez-le
@@ -20,8 +20,14 @@ Deux choses à savoir :
 
 - Qui connaît cet identifiant peut lire le Gist, puisque la page le lit sans
   s'authentifier. N'y écrivez rien de confidentiel.
-- GitHub limite les lectures anonymes à soixante par heure et par adresse IP.
-  C'est large pour un site de famille, mais c'est la limite.
+- La lecture emprunte deux chemins indépendants, pour que le calendrier ne
+  disparaisse pas au premier incident. Les visiteurs passent par l'adresse
+  directe du fichier, sans quota mais servie par un cache de cinq minutes : une
+  publication met donc ce délai à leur parvenir. Le tableau d'administration
+  passe d'abord par l'API, toujours à jour, pour ne jamais travailler sur une
+  version périmée. Chacun se rabat sur l'autre en cas de panne. L'API n'accorde
+  que soixante appels par heure et par adresse IP à qui n'est pas authentifié,
+  ce qui suffisait mal à une maison entière.
 
 ## Le tableau d'administration
 

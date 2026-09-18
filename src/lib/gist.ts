@@ -2,6 +2,7 @@ import type { HostKey, Period, RoomState } from '../data/types'
 import { config } from '../config'
 
 const API = 'https://api.github.com/gists'
+const RAW = 'https://gist.githubusercontent.com'
 const ROOMS: RoomState[] = ['free', 'booked', 'blocked']
 const HOSTS: HostKey[] = ['mathis', 'julie']
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -140,11 +141,51 @@ function fileContent(payload: unknown, fileName: string): string {
   return file.content
 }
 
-/** Lecture publique : c'est ce que fait la page des visiteurs. */
-export async function fetchSnapshot(gistId: string, token?: string): Promise<Snapshot> {
+/**
+ * Par l'API : toujours à jour, mais GitHub n'accorde que soixante appels par
+ * heure et par adresse IP à qui n'est pas authentifié.
+ */
+async function fetchByApi(gistId: string, token?: string): Promise<Snapshot> {
   const response = await fetch(`${API}/${gistId}`, { headers: headers(token), cache: 'no-store' })
   if (!response.ok) throw await explain(response)
   return readSnapshot(fileContent(await response.json(), config.gistFile))
+}
+
+/**
+ * Par l'adresse directe du fichier : sans quota, mais servi par un cache de
+ * cinq minutes. C'est le chemin des visiteurs, qui sont nombreux et pas pressés.
+ */
+async function fetchByRawUrl(gistId: string): Promise<Snapshot> {
+  const url = `${RAW}/${config.gistOwner}/${gistId}/raw/${config.gistFile}`
+  const response = await fetch(url, { cache: 'no-store' })
+  if (!response.ok) throw await explain(response)
+  return readSnapshot(await response.text())
+}
+
+export interface ReadOptions {
+  /** Passer par l'API d'abord, pour ne pas travailler sur une version périmée. */
+  fresh?: boolean
+  token?: string
+}
+
+/**
+ * Lecture publique, par deux chemins indépendants : si l'un est épuisé ou en
+ * panne, l'autre répond. Le calendrier ne disparaît pas pour si peu.
+ */
+export async function fetchSnapshot(gistId: string, options: ReadOptions = {}): Promise<Snapshot> {
+  const paths = options.fresh
+    ? [() => fetchByApi(gistId, options.token), () => fetchByRawUrl(gistId)]
+    : [() => fetchByRawUrl(gistId), () => fetchByApi(gistId, options.token)]
+
+  let last: unknown
+  for (const read of paths) {
+    try {
+      return await read()
+    } catch (error) {
+      last = error
+    }
+  }
+  throw last instanceof Error ? last : new Error('Le calendrier est introuvable.')
 }
 
 export async function saveSnapshot(

@@ -28,6 +28,8 @@ export const config = {
    */
   gistId: '4647b5e666be422544905df483333b88',
   gistFile: 'availability.json',
+  /** Le compte qui possède le Gist, nécessaire pour l'adresse de lecture directe. */
+  gistOwner: 'Maths-A',
 
   /**
    * Nombre de mois affichés d'emblée. Le calendrier va de toute façon jusqu'à

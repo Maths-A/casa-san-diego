@@ -128,7 +128,7 @@ export function Admin() {
   useEffect(() => {
     if (!gistId) return
     let cancelled = false
-    fetchSnapshot(gistId)
+    fetchSnapshot(gistId, { fresh: true, token })
       .then((snapshot) => {
         if (cancelled) return
         setPublished(snapshot.periods)
@@ -152,7 +152,7 @@ export function Admin() {
 
   const reload = () =>
     run(async () => {
-      const snapshot = await fetchSnapshot(gistId)
+      const snapshot = await fetchSnapshot(gistId, { fresh: true, token })
       setPublished(snapshot.periods)
       setPublishedRecipients(snapshot.recipients)
       setRecipients(snapshot.recipients)
@@ -169,7 +169,7 @@ export function Admin() {
       setRecipients(snapshot.recipients)
       setUpdatedAt(snapshot.updatedAt)
       setRows(snapshot.periods)
-      report('Publié. Les visiteurs le voient dès maintenant.')
+      report('Publié. Les visiteurs le verront d\u2019ici cinq minutes.')
     })
 
   const sendTest = () =>
