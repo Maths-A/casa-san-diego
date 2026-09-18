@@ -53,7 +53,4 @@ export const config = {
     },
   ],
 
-  /** Affiché en bas du formulaire de demande. */
-  requestNote:
-    'Rien n’est réservé tant qu’on n’a pas répondu. Deux demandes sur les mêmes dates sont traitées dans l’ordre d’arrivée.',
 } as const

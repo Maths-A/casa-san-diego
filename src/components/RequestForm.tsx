@@ -113,25 +113,27 @@ export function RequestForm({ selected, start }: Props) {
         </p>
       )}
 
-      <pre className="preview">{message}</pre>
-
       <div className="actions">
-        {mailto && (
+        {mailto ? (
           <a className="button primary" href={mailto}>
-            Envoyer par e-mail
+            Envoyer la demande
           </a>
+        ) : (
+          <button className="button primary" onClick={copy}>
+            {copyState === 'copied' ? 'Demande copiée' : 'Envoyer la demande'}
+          </button>
         )}
-        <button className={`button${mailto ? '' : ' primary'}`} onClick={copy}>
-          {copyState === 'copied' ? 'Copié' : 'Copier le message'}
-        </button>
       </div>
 
+      {copyState === 'copied' && (
+        <p className="hint">Votre demande est dans le presse-papiers, envoyez-la nous.</p>
+      )}
       {copyState === 'manual' && (
         <p className="hint">
-          Votre navigateur a bloqué le presse-papiers. Sélectionnez le texte ci-dessus et copiez-le.
+          Votre navigateur a bloqué le presse-papiers. Écrivez-nous directement, en nous donnant vos
+          dates.
         </p>
       )}
-      <p className="hint">{config.requestNote}</p>
     </div>
   )
 }
