@@ -203,9 +203,6 @@ export function RequestForm({ selected, start, recipients }: Props) {
           Écrivez-nous directement en nous donnant vos dates, on s&rsquo;en occupe.
         </p>
       )}
-      {recipients.length > 0 && state === 'idle' && (
-        <p className="hint">Votre demande nous arrive par e-mail, via le service FormSubmit.</p>
-      )}
     </div>
   )
 }

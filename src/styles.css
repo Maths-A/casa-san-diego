@@ -302,6 +302,11 @@ body {
   color: var(--muted);
 }
 
+/* Un peu d'air entre la saisie et le bouton qui l'envoie. */
+.request .actions {
+  margin-top: 28px;
+}
+
 .fields {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
