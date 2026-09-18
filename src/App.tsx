@@ -106,7 +106,7 @@ export default function App() {
       ) : (
         <main>
           <section className="panel">
-            <h2>Quand la chambre est libre</h2>
+            <h2>Quand l'appartement est libre</h2>
             {load.state === 'loading' && <p className="empty-state">Chargement du calendrier…</p>}
             {load.state === 'error' && (
               <p className="empty-state">
