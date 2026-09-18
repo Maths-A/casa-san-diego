@@ -1,5 +1,6 @@
-import type { Period } from '../data/availability'
+import type { Period } from '../data/types'
 import { formatRange, nights } from '../lib/dates'
+import { guestStatus } from '../lib/status'
 
 interface Props {
   periods: Period[]
@@ -9,12 +10,12 @@ interface Props {
 }
 
 export function OpenWindows({ periods, start, selected, onPick }: Props) {
-  const open = periods.filter((p) => p.status === 'open')
+  const open = periods.filter((p) => guestStatus(p) === 'open')
 
   if (open.length === 0) {
     return (
       <p className="empty-state">
-        Nothing open on the calendar right now. Write to us anyway, plans move.
+        Rien de libre au calendrier pour le moment. Écrivez-nous quand même, les plans bougent.
       </p>
     )
   }
@@ -33,7 +34,7 @@ export function OpenWindows({ periods, start, selected, onPick }: Props) {
             >
               <span className="window-dates">{formatRange(period, start)}</span>
               <span className="window-meta">
-                {count} night{count === 1 ? '' : 's'}
+                {count} nuit{count === 1 ? '' : 's'}
                 {period.note ? ` · ${period.note}` : ''}
               </span>
             </button>

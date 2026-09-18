@@ -1,50 +1,59 @@
 /**
- * Everything you are likely to want to change lives in this file.
+ * Tout ce que tu auras envie de changer se trouve dans ce fichier.
  */
 export const config = {
-  /** Shown in the browser tab and at the top of the page. */
+  /** Affiché dans l'onglet du navigateur et en haut de la page. */
   siteName: 'Casa San Diego',
 
-  /** Who is hosting. Add your wife's name here, e.g. 'Mathis & Claire'. */
-  hosts: 'Mathis',
+  /** Qui reçoit, tel qu'affiché en haut de la page. */
+  hosts: 'Mathis et Julie',
 
-  /** One-line welcome under the title. */
-  tagline: 'We moved to San Diego. Come stay with us.',
+  /** Les prénoms utilisés dans le tableau d'administration. */
+  hostNames: {
+    mathis: 'Mathis',
+    julie: 'Julie',
+  },
 
-  /** Neighbourhood / city line. Keep the exact address off a public page. */
-  location: 'San Diego, California',
+  /** La phrase d'accueil, sous le titre. */
+  tagline: 'On s’installe à San Diego. Venez nous voir.',
+
+  /** Ville ou quartier. Garde l'adresse exacte en dehors d'une page publique. */
+  location: 'San Diego, Californie',
 
   /**
-   * Optional. If set, the request button opens a pre-filled email.
-   * Leave it as an empty string to show a copy-to-clipboard message instead,
-   * which keeps your address off a public page.
+   * Optionnel. Si tu mets une adresse ici, le bouton ouvre un e-mail déjà
+   * rempli. Laisse la chaîne vide pour proposer plutôt une copie du message,
+   * ce qui évite d'exposer ton adresse sur une page publique.
    */
   contactEmail: '',
 
-  /** How many months of calendar to show. */
-  monthsToShow: 8,
+  /**
+   * Le calendrier va jusqu'à la dernière date saisie, sans limite. Ce nombre
+   * n'est qu'un plancher, pour que la page ne soit pas vide au démarrage.
+   */
+  minMonths: 3,
 
-  /** Shown in the "Good to know" section. Edit freely. */
+  /** Les encarts « Bon à savoir ». Modifie-les librement. */
   practicalInfo: [
     {
-      title: 'The guest room',
-      body: 'A private room with a queen bed, clean towels and a fan. The bathroom is shared with us.',
+      title: 'La chambre',
+      body: 'Une chambre pour vous seuls, lit double, serviettes propres et un ventilateur. La salle de bain est partagée avec nous.',
     },
     {
-      title: 'Getting here',
-      body: 'San Diego International (SAN) is about 20 minutes away. Tell us your flight and we will pick you up.',
+      title: 'Pour venir',
+      body: 'L’aéroport de San Diego (SAN) est à vingt minutes. Dites-nous votre vol, on vient vous chercher.',
     },
     {
-      title: 'Arrivals and departures',
-      body: 'Arrive any time after 4pm, leave by 11am on your last day. Ask if you need something different.',
+      title: 'Arrivées et départs',
+      body: 'Arrivée à partir de 16h, départ avant 11h le dernier jour. Dites-le nous s’il vous faut autre chose.',
     },
     {
-      title: 'House habits',
-      body: 'No shoes inside, we are usually working until 6pm on weekdays, and the coffee is yours to take.',
+      title: 'À la maison',
+      body: 'On enlève les chaussures en entrant, on travaille jusqu’à 18h en semaine, et le café est à vous.',
     },
   ],
 
-  /** Shown at the bottom of the request panel. */
+  /** Affiché en bas du formulaire de demande. */
   requestNote:
-    'Nothing is booked until we reply. Two separate requests for the same dates go in the order they reach us.',
+    'Rien n’est réservé tant qu’on n’a pas répondu. Deux demandes sur les mêmes dates sont traitées dans l’ordre d’arrivée.',
 } as const

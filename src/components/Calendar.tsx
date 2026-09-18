@@ -1,7 +1,8 @@
-import type { Period } from '../data/availability'
-import { monthGrid, monthLabel, monthsFrom, statusLabel, toISO } from '../lib/dates'
+import type { Period } from '../data/types'
+import { monthGrid, monthLabel, monthsFrom, toISO } from '../lib/dates'
+import { guestStatus, statusLabel } from '../lib/status'
 
-const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
 interface Props {
   dayIndex: Map<string, Period>
@@ -30,9 +31,9 @@ export function Calendar({ dayIndex, start, monthCount, onPick }: Props) {
               const iso = toISO(date)
               const period = dayIndex.get(iso)
               const past = iso < todayISO
-              const status = past ? undefined : period?.status
+              const status = past || !period ? undefined : guestStatus(period)
               const isOpen = status === 'open'
-              const label = `${iso}${status ? `, ${statusLabel[status].toLowerCase()}` : ''}`
+              const label = `${iso}${status ? `, ${statusLabel[status]}` : ''}`
 
               const className = [
                 'day',
@@ -48,7 +49,7 @@ export function Calendar({ dayIndex, start, monthCount, onPick }: Props) {
                   className={className}
                   key={i}
                   onClick={() => onPick(period)}
-                  aria-label={`${label}. Ask for these dates`}
+                  aria-label={`${label}. Demander ces dates`}
                 >
                   {date.getUTCDate()}
                 </button>

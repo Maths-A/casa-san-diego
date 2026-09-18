@@ -54,6 +54,11 @@ body {
   padding: 0 16px 64px;
 }
 
+/* Le tableau d'administration a besoin de plus de largeur que la page visiteur. */
+.page.wide {
+  max-width: 1160px;
+}
+
 /* ---------- hero ---------- */
 
 .hero {
@@ -161,6 +166,12 @@ body {
   font-weight: 600;
 }
 
+/* Les mois et les plages de dates arrivent en minuscules depuis Intl. */
+.month h3::first-letter,
+.window-dates::first-letter {
+  text-transform: uppercase;
+}
+
 .weekdays,
 .days {
   display: grid;
@@ -265,6 +276,7 @@ body {
 }
 
 .window-dates {
+  display: block;
   font-weight: 600;
 }
 
@@ -418,4 +430,131 @@ footer {
   .calendar {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
+}
+
+/* ---------- tableau d'administration ---------- */
+
+.table-scroll {
+  overflow-x: auto;
+  margin: 0 -8px 18px;
+  padding: 0 8px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.admin-table th {
+  padding: 0 8px 10px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 6px 8px;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.admin-table input[type='date'],
+.admin-table input[type='text'],
+.admin-table input:not([type]),
+.admin-table select {
+  min-width: 116px;
+  padding: 7px 9px;
+  font-size: 0.85rem;
+}
+
+.admin-table .tick {
+  text-align: center;
+}
+
+.admin-table input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--open);
+}
+
+.admin-table .derived {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.admin-table .derived strong {
+  color: var(--ink);
+}
+
+.admin-table .row-warn td {
+  background: var(--booked-soft);
+}
+
+select {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+
+.link-button {
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--booked);
+  font: inherit;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.preview.source {
+  max-height: 260px;
+  overflow: auto;
+  font-size: 0.78rem;
+}
+
+.preview-window {
+  cursor: default;
+}
+
+.preview-window.open {
+  border-color: var(--open);
+}
+
+.preview-window.booked {
+  border-color: var(--booked);
+}
+
+.preview-window.blocked {
+  border-color: var(--blocked);
+}
+
+.hint.centered {
+  text-align: center;
+}
+
+code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+}
+
+a {
+  color: var(--accent);
 }

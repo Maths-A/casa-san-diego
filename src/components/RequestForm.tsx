@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Period } from '../data/availability'
+import type { Period } from '../data/types'
 import { config } from '../config'
 import { addDays, formatDay, parseISO, toISO } from '../lib/dates'
 
@@ -18,8 +18,8 @@ export function RequestForm({ selected, start }: Props) {
   const [note, setNote] = useState('')
   const [copyState, setCopyState] = useState<CopyState>('idle')
 
-  // Picking a window on the calendar fills the dates in, and the guest can
-  // still narrow them down to part of it.
+  // Choisir une période au calendrier remplit les dates, que le visiteur peut
+  // ensuite resserrer sur une partie seulement.
   useEffect(() => {
     if (!selected) return
     setArrive(selected.from)
@@ -34,13 +34,13 @@ export function RequestForm({ selected, start }: Props) {
   )
 
   const message = useMemo(() => {
-    const who = name.trim() || 'Hello'
+    const who = name.trim() ? `Bonjour, c’est ${name.trim()}.` : 'Bonjour !'
     const lines = [
-      `${who} here.`,
+      who,
       arrive && leave
-        ? `We would like to come from ${formatDay(arrive, start)} to ${formatDay(leave, start)}.`
-        : 'We would like to come and stay.',
-      `There would be ${people} of us.`,
+        ? `On aimerait venir du ${formatDay(arrive, start)} au ${formatDay(leave, start)}.`
+        : 'On aimerait venir vous voir.',
+      `On serait ${people}.`,
     ]
     if (note.trim()) lines.push(note.trim())
     return lines.join('\n')
@@ -48,7 +48,7 @@ export function RequestForm({ selected, start }: Props) {
 
   const mailto = config.contactEmail
     ? `mailto:${config.contactEmail}?subject=${encodeURIComponent(
-        `Staying with you${arrive ? ` from ${arrive}` : ''}`,
+        `Venir chez vous${arrive ? ` à partir du ${arrive}` : ''}`,
       )}&body=${encodeURIComponent(message)}`
     : null
 
@@ -57,28 +57,28 @@ export function RequestForm({ selected, start }: Props) {
       await navigator.clipboard.writeText(message)
       setCopyState('copied')
     } catch {
-      // Clipboard access is blocked outside secure contexts and in some
-      // browsers, so fall back to showing the text for a manual copy.
+      // Le presse-papiers est bloqué hors contexte sécurisé et dans certains
+      // navigateurs : on affiche alors le texte pour une copie à la main.
       setCopyState('manual')
     }
   }
 
   return (
     <div className="request">
-      <h2>Ask for a date</h2>
+      <h2>Demander des dates</h2>
       <p className="request-lead">
         {selected
-          ? 'Adjust the dates if you only need part of it.'
-          : 'Pick an open date on the calendar, or fill this in yourself.'}
+          ? 'Ajustez les dates si vous ne venez qu’une partie du temps.'
+          : 'Choisissez des dates libres au calendrier, ou remplissez vous-même.'}
       </p>
 
       <div className="fields">
         <label>
-          Your name
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ana and Tom" />
+          Votre nom
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ana et Tom" />
         </label>
         <label>
-          How many of you
+          Vous êtes combien
           <input
             type="number"
             min="1"
@@ -88,27 +88,29 @@ export function RequestForm({ selected, start }: Props) {
           />
         </label>
         <label>
-          Arriving
+          Arrivée
           <input type="date" value={arrive} onChange={(e) => setArrive(e.target.value)} />
         </label>
         <label>
-          Leaving
+          Départ
           <input type="date" value={leave} onChange={(e) => setLeave(e.target.value)} />
         </label>
         <label className="wide">
-          Anything we should know
+          Ce qu&rsquo;on devrait savoir
           <textarea
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Landing at 9pm, and one of us is allergic to cats."
+            placeholder="On atterrit à 21h, et l'un de nous est allergique aux chats."
           />
         </label>
       </div>
 
-      {datesOutOfOrder && <p className="warn">The leaving date needs to come after the arrival.</p>}
+      {datesOutOfOrder && <p className="warn">Le départ doit venir après l&rsquo;arrivée.</p>}
       {!datesOutOfOrder && outsideWindow && (
-        <p className="warn">Those dates run past the open window. Ask anyway, we may be able to.</p>
+        <p className="warn">
+          Ces dates dépassent la période libre. Demandez quand même, c&rsquo;est peut-être jouable.
+        </p>
       )}
 
       <pre className="preview">{message}</pre>
@@ -116,16 +118,18 @@ export function RequestForm({ selected, start }: Props) {
       <div className="actions">
         {mailto && (
           <a className="button primary" href={mailto}>
-            Send it by email
+            Envoyer par e-mail
           </a>
         )}
         <button className={`button${mailto ? '' : ' primary'}`} onClick={copy}>
-          {copyState === 'copied' ? 'Copied' : 'Copy the message'}
+          {copyState === 'copied' ? 'Copié' : 'Copier le message'}
         </button>
       </div>
 
       {copyState === 'manual' && (
-        <p className="hint">Your browser blocked the clipboard. Select the text above and copy it.</p>
+        <p className="hint">
+          Votre navigateur a bloqué le presse-papiers. Sélectionnez le texte ci-dessus et copiez-le.
+        </p>
       )}
       <p className="hint">{config.requestNote}</p>
     </div>
