@@ -1,5 +1,5 @@
 import type { Period } from '../data/types'
-import { addDays, daysOf, parseISO, toISO } from './dates'
+import { addDays, daysOf, toISO } from './dates'
 import type { Status } from './status'
 import { guestStatus } from './status'
 
@@ -76,10 +76,3 @@ export function buildCalendar(periods: Period[], from: Date, months: number): Ca
 export function windowOf(view: CalendarView, iso: string): OpenWindow | null {
   return view.windowByDay.get(iso) ?? null
 }
-
-/** Utile pour borner une saisie sur l'horizon connu. */
-export function lastDayOf(from: Date, months: number): string {
-  return toISO(horizonEnd(from, months))
-}
-
-export { parseISO }

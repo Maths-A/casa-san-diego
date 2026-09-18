@@ -18,7 +18,7 @@ export function guestStatus(period: Period): Status {
 export const statusLabel: Record<Status, string> = {
   open: 'libre',
   booked: 'déjà pris',
-  blocked: 'on est absents',
+  blocked: 'pas disponible',
 }
 
 export const roomLabel: Record<Period['room'], string> = {

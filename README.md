@@ -12,7 +12,9 @@ chaque chargement, sans jeton, et le tableau d'administration l'écrit. Une
 modification est donc visible en une minute environ, sans reconstruire le site.
 
 Son identifiant est dans `gistId`, côté `src/config.ts`. Le dépôt ne contient
-aucune date : il ne contient que le code.
+aucune date : il ne contient que le code. Pour repartir d'un autre Gist, créez-le
+sur <https://gist.github.com> avec un fichier `availability.json` contenant
+`{"periods": []}`, puis collez son identifiant dans `src/config.ts`.
 
 Deux choses à savoir :
 
@@ -58,6 +60,10 @@ où vous vous parlez d'habitude.
 FormSubmit vous donne aussi un alias, une suite de lettres et de chiffres qui
 remplace l'adresse. Collez-le dans le champ à la place de l'adresse : votre
 adresse reste alors hors du Gist, donc hors de portée des robots.
+
+Tant qu'aucune adresse n'est enregistrée, le bouton des visiteurs s'appelle
+« Copier la demande » et met le texte dans leur presse-papiers, à vous envoyer
+par message. Rien ne leur parle de réglages : c'est votre affaire, pas la leur.
 
 Le formulaire porte un champ piège, invisible à l'écran, qui absorbe les robots
 remplissant tout ce qu'ils trouvent. Si l'envoi échoue malgré tout, la demande

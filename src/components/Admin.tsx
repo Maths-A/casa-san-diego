@@ -3,7 +3,7 @@ import type { HostKey, Period, RoomState } from '../data/types'
 import { config } from '../config'
 import { addDays, formatRange, nights, parseISO, toISO, today } from '../lib/dates'
 import { HOST_KEYS, guestStatus, roomLabel, statusLabel } from '../lib/status'
-import { createGist, fetchSnapshot, isRecipient, periodsKey, saveSnapshot } from '../lib/gist'
+import { fetchSnapshot, isRecipient, periodsKey, saveSnapshot } from '../lib/gist'
 import { MailError, sendRequest } from '../lib/mail'
 
 const DRAFT_KEY = 'casa-san-diego:brouillon'
@@ -166,14 +166,6 @@ export function Admin() {
       setUpdatedAt(snapshot.updatedAt)
       setRows(snapshot.periods)
       report('Publié. Les visiteurs le voient dès maintenant.')
-    })
-
-  const create = () =>
-    run(async () => {
-      const id = await createGist(token, rows, recipients)
-      setGistId(id)
-      setPublished(rows)
-      report(`Gist créé. Collez ${id} dans gistId, côté src/config.ts, puis poussez une fois.`)
     })
 
   const sendTest = () =>
@@ -429,7 +421,10 @@ export function Admin() {
             </li>
           ))}
           {recipients.length === 0 && (
-            <li className="derived">Aucune adresse pour l&rsquo;instant.</li>
+            <li className="warn">
+              Aucune adresse : le bouton des visiteurs copie leur demande au lieu de vous
+              l&rsquo;envoyer.
+            </li>
           )}
         </ul>
 
@@ -489,14 +484,6 @@ export function Admin() {
             />
           </label>
         </div>
-
-        {!config.gistId && (
-          <div className="actions">
-            <button className="button" onClick={create} disabled={busy || !token || Boolean(gistId)}>
-              Créer le Gist
-            </button>
-          </div>
-        )}
 
         <p className="hint">
           Qui connaît cet identifiant peut lire le Gist, puisque la page des visiteurs le lit sans

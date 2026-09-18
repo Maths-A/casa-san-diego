@@ -81,9 +81,7 @@ export function RequestForm({ selected, start, recipients }: Props) {
     setState('sending')
 
     if (recipients.length === 0) {
-      const copied = await copy()
-      setProblem('Aucune adresse n’est configurée pour recevoir la demande.')
-      setState(copied ? 'copied' : 'failed')
+      setState((await copy()) ? 'copied' : 'failed')
       return
     }
 
@@ -158,7 +156,7 @@ export function RequestForm({ selected, start, recipients }: Props) {
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="On atterrit à 21h, et l'un de nous est allergique aux chats."
+            placeholder="bla bla bla."
           />
         </label>
         <label className="trap" aria-hidden="true">
@@ -180,7 +178,11 @@ export function RequestForm({ selected, start, recipients }: Props) {
           onClick={submit}
           disabled={state === 'sending' || datesOutOfOrder}
         >
-          {state === 'sending' ? 'Envoi…' : 'Envoyer la demande'}
+          {state === 'sending'
+            ? 'Un instant…'
+            : recipients.length > 0
+              ? 'Envoyer la demande'
+              : 'Copier la demande'}
         </button>
       </div>
 
@@ -189,6 +191,11 @@ export function RequestForm({ selected, start, recipients }: Props) {
         <p className="hint">
           Votre demande est dans le presse-papiers : envoyez-la nous par message, elle ne sera pas
           perdue.
+        </p>
+      )}
+      {recipients.length === 0 && state === 'idle' && (
+        <p className="hint">
+          Le bouton copie votre demande, à nous envoyer par message.
         </p>
       )}
       {state === 'failed' && (

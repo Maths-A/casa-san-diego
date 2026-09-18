@@ -339,19 +339,6 @@ textarea:focus {
   outline-offset: 1px;
 }
 
-.preview {
-  margin: 20px 0 16px;
-  padding: 14px 16px;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  background: var(--bg);
-  color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.82rem;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -518,12 +505,6 @@ select {
 .button:disabled {
   opacity: 0.45;
   cursor: default;
-}
-
-.preview.source {
-  max-height: 260px;
-  overflow: auto;
-  font-size: 0.78rem;
 }
 
 .preview-window {

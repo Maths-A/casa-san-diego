@@ -64,7 +64,7 @@ function readPeriod(raw: unknown): Period | null {
   return note ? { from, to, hosts, room, note } : { from, to, hosts, room }
 }
 
-export function readSnapshot(text: string): Snapshot {
+function readSnapshot(text: string): Snapshot {
   const parsed: unknown = JSON.parse(text)
   const body = Array.isArray(parsed) ? { periods: parsed } : parsed
   if (typeof body !== 'object' || body === null) {
@@ -99,7 +99,7 @@ export function periodsKey(periods: Period[]): string {
   )
 }
 
-export function writeSnapshot(periods: Period[], recipients: string[]): string {
+function writeSnapshot(periods: Period[], recipients: string[]): string {
   const body = {
     updatedAt: new Date().toISOString(),
     recipients: recipients.map((entry) => entry.trim()).filter(isRecipient).slice(0, MAX_RECIPIENTS),
@@ -162,25 +162,4 @@ export async function saveSnapshot(
   })
   if (!response.ok) throw await explain(response)
   return readSnapshot(fileContent(await response.json(), config.gistFile))
-}
-
-/** Crée le Gist secret la première fois, et rend son identifiant. */
-export async function createGist(
-  token: string,
-  periods: Period[],
-  recipients: string[],
-): Promise<string> {
-  const response = await fetch(API, {
-    method: 'POST',
-    headers: { ...headers(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      description: 'Casa San Diego : le calendrier de la chambre d’amis',
-      public: false,
-      files: { [config.gistFile]: { content: writeSnapshot(periods, recipients) } },
-    }),
-  })
-  if (!response.ok) throw await explain(response)
-  const id = (await response.json()).id
-  if (typeof id !== 'string') throw new Error('GitHub n’a pas renvoyé d’identifiant de Gist.')
-  return id
 }

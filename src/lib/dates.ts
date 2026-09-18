@@ -40,15 +40,6 @@ export function daysOf(period: Span): string[] {
   return out
 }
 
-/** Table date -> période, pour colorer le calendrier. */
-export function buildDayIndex<T extends Span>(periods: T[]): Map<string, T> {
-  const index = new Map<string, T>()
-  for (const period of periods) {
-    for (const day of daysOf(period)) index.set(day, period)
-  }
-  return index
-}
-
 /**
  * Les périodes qui ont encore des nuits devant elles, par ordre de date. Une
  * période déjà commencée ne garde que ses nuits restantes, pour ne jamais
