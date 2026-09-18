@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Period } from '../data/types'
+import type { OpenWindow } from '../lib/calendar'
 import { addDays, formatDay, parseISO, toISO } from '../lib/dates'
 import { MailError, sendRequest } from '../lib/mail'
 
 interface Props {
-  selected: Period | null
+  selected: OpenWindow | null
   start: Date
   /** Qui reçoit la demande. Vide : on se rabat sur le presse-papiers. */
   recipients: string[]
@@ -14,7 +14,6 @@ type Sending = 'idle' | 'sending' | 'sent' | 'copied' | 'failed'
 
 export function RequestForm({ selected, start, recipients }: Props) {
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
   const [people, setPeople] = useState('2')
   const [arrive, setArrive] = useState('')
   const [leave, setLeave] = useState('')
@@ -28,14 +27,19 @@ export function RequestForm({ selected, start, recipients }: Props) {
   useEffect(() => {
     if (!selected) return
     setArrive(selected.from)
-    setLeave(toISO(addDays(parseISO(selected.to), 1)))
+    // Un créneau sans fin connue : proposer un départ à sept mois n'aurait
+    // aucun sens, le visiteur dit lui-même jusqu'à quand il reste.
+    setLeave(selected.openEnded ? '' : toISO(addDays(parseISO(selected.to), 1)))
     setState('idle')
   }, [selected])
 
   const lastNight = leave ? toISO(addDays(parseISO(leave), -1)) : ''
   const datesOutOfOrder = Boolean(arrive && leave && leave <= arrive)
   const outsideWindow = Boolean(
-    selected && arrive && lastNight && (arrive < selected.from || lastNight > selected.to),
+    selected &&
+      arrive &&
+      lastNight &&
+      (arrive < selected.from || (!selected.openEnded && lastNight > selected.to)),
   )
 
   const dates =
@@ -47,10 +51,9 @@ export function RequestForm({ selected, start, recipients }: Props) {
       dates ? `On aimerait venir ${dates}.` : 'On aimerait venir vous voir.',
       `On serait ${people}.`,
     ]
-    if (email.trim()) lines.push(`Vous pouvez répondre à ${email.trim()}.`)
     if (note.trim()) lines.push(note.trim())
     return lines.join('\n')
-  }, [name, email, people, dates, note])
+  }, [name, people, dates, note])
 
   async function copy(): Promise<boolean> {
     try {
@@ -87,7 +90,6 @@ export function RequestForm({ selected, start, recipients }: Props) {
     try {
       await sendRequest(recipients, {
         name: name.trim(),
-        email: email.trim(),
         people,
         arrive,
         leave,
@@ -131,15 +133,6 @@ export function RequestForm({ selected, start, recipients }: Props) {
         <label>
           Votre nom
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ana et Tom" />
-        </label>
-        <label>
-          Votre e-mail, pour la réponse
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="ana@exemple.fr"
-          />
         </label>
         <label>
           Vous êtes combien

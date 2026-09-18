@@ -11,7 +11,6 @@ const ENDPOINT = 'https://formsubmit.co/ajax'
 
 export interface Request {
   name: string
-  email: string
   people: string
   arrive: string
   leave: string
@@ -57,7 +56,6 @@ export async function sendRequest(recipients: string[], request: Request): Promi
     _captcha: 'false',
     _template: 'table',
   }
-  if (request.email) body._replyto = request.email
   if (others.length > 0) body._cc = others.join(',')
 
   let response: Response

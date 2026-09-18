@@ -1,17 +1,18 @@
-import type { Period } from '../data/types'
+import type { CalendarView, OpenWindow } from '../lib/calendar'
+import { windowOf } from '../lib/calendar'
 import { monthGrid, monthLabel, monthsFrom, toISO } from '../lib/dates'
-import { guestStatus, statusLabel } from '../lib/status'
+import { statusLabel } from '../lib/status'
 
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
 interface Props {
-  dayIndex: Map<string, Period>
+  view: CalendarView
   start: Date
   monthCount: number
-  onPick: (period: Period) => void
+  onPick: (window: OpenWindow) => void
 }
 
-export function Calendar({ dayIndex, start, monthCount, onPick }: Props) {
+export function Calendar({ view, start, monthCount, onPick }: Props) {
   const todayISO = toISO(start)
 
   return (
@@ -29,11 +30,13 @@ export function Calendar({ dayIndex, start, monthCount, onPick }: Props) {
               if (!date) return <span className="day empty" key={i} />
 
               const iso = toISO(date)
-              const period = dayIndex.get(iso)
               const past = iso < todayISO
-              const status = past || !period ? undefined : guestStatus(period)
-              const isOpen = status === 'open'
-              const label = `${iso}${status ? `, ${statusLabel[status]}` : ''}`
+              const status = past ? undefined : view.status.get(iso)
+              const note = view.noteByDay.get(iso)
+              const window = status === 'open' ? windowOf(view, iso) : null
+              const label = [iso, status ? statusLabel[status] : null, note]
+                .filter(Boolean)
+                .join(', ')
 
               const className = [
                 'day',
@@ -44,17 +47,17 @@ export function Calendar({ dayIndex, start, monthCount, onPick }: Props) {
                 .filter(Boolean)
                 .join(' ')
 
-              return isOpen && period ? (
+              return window ? (
                 <button
                   className={className}
                   key={i}
-                  onClick={() => onPick(period)}
+                  onClick={() => onPick(window)}
                   aria-label={`${label}. Demander ces dates`}
                 >
                   {date.getUTCDate()}
                 </button>
               ) : (
-                <span className={className} key={i} aria-label={label}>
+                <span className={className} key={i} aria-label={label} title={note}>
                   {date.getUTCDate()}
                 </span>
               )

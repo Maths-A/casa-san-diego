@@ -52,8 +52,8 @@ de formulaire en e-mail. Il n'y a pas de compte à créer :
    profitent.
 
 L'e-mail que vous recevez contient le nom, le nombre de personnes, les dates et
-le message. Si le visiteur a laissé son adresse, une réponse lui parvient
-directement.
+le message. Le site ne demande pas l'adresse du visiteur : vous lui répondez par
+où vous vous parlez d'habitude.
 
 FormSubmit vous donne aussi un alias, une suite de lettres et de chiffres qui
 remplace l'adresse. Collez-le dans le champ à la place de l'adresse : votre
@@ -91,19 +91,26 @@ page et créez-en un autre.
 }
 ```
 
-- `from` est la première nuit passée ici.
-- `to` est la dernière nuit passée ici ; le départ a lieu le lendemain matin.
+**Tout est libre par défaut.** Une période saisie est une exception : une
+absence, une chambre déjà prise, des dates qu'on se garde. Les créneaux libres
+proposés aux visiteurs sont ce que les exceptions laissent entre elles.
+
+- `from` est la première nuit concernée.
+- `to` est la dernière nuit concernée ; le départ a lieu le lendemain matin.
 - Pour une seule nuit, mettez deux fois la même date.
-- `hosts` dit qui est à la maison sur ces dates.
+- `hosts` dit qui est à la maison sur ces dates. Si personne n'y est, la chambre
+  n'est pas proposée, même marquée libre.
 - `room` vaut `'free'`, `'booked'` ou `'blocked'`.
-- `note` ajoute une petite ligne sur la carte, par exemple `"Ana et Tom"`.
+- `note` ajoute une précision, par exemple `"Ana et Tom"`.
 
 Le site relit ce fichier sans rien croire sur parole : une entrée mal formée est
 ignorée plutôt que d'abîmer la page. Les dates passées disparaissent seules.
 
 Le calendrier montre une année devant lui, réglable par `monthsAhead` dans
 `src/config.ts`. Il va plus loin tout seul si des dates dépassent cet horizon,
-et le bouton « Voir plus loin » en ajoute autant à chaque clic.
+et le bouton « Voir plus loin » en ajoute autant à chaque clic. Un créneau qui
+touche le bord des mois affichés s'annonce « à partir du », et non jusqu'à une
+date que seul l'affichage impose.
 
 ## Changer les textes
 

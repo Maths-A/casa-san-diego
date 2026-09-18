@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Period } from './data/types'
 import { config } from './config'
-import { buildDayIndex, monthSpan, parseISO, today, toISO, upcoming } from './lib/dates'
+import { monthSpan, parseISO, today, toISO, upcoming } from './lib/dates'
+import type { OpenWindow } from './lib/calendar'
+import { buildCalendar } from './lib/calendar'
 import { fetchSnapshot } from './lib/gist'
 import { scrollToElement } from './lib/scroll'
 import { Admin } from './components/Admin'
@@ -60,8 +62,7 @@ export default function App() {
   const periods = load.state === 'ready' ? load.periods : []
   const recipients = load.state === 'ready' ? load.recipients : []
   const visible = useMemo(() => upcoming(periods, start), [periods, start])
-  const dayIndex = useMemo(() => buildDayIndex(visible), [visible])
-  const [selected, setSelected] = useState<Period | null>(null)
+  const [selected, setSelected] = useState<OpenWindow | null>(null)
   const [extraMonths, setExtraMonths] = useState(0)
 
   // Une année devant soi, davantage si des dates vont plus loin, et autant de
@@ -71,8 +72,12 @@ export default function App() {
     return Math.max(config.monthsAhead + extraMonths, monthSpan(start, parseISO(last)))
   }, [visible, start, extraMonths])
 
-  function pick(period: Period) {
-    setSelected(period)
+  // Le calendrier est libre par défaut : les périodes saisies sont les
+  // exceptions, et les créneaux libres se déduisent de ce qu'elles laissent.
+  const view = useMemo(() => buildCalendar(visible, start, monthCount), [visible, start, monthCount])
+
+  function pick(window: OpenWindow) {
+    setSelected(window)
     scrollToElement('ask')
   }
 
@@ -111,7 +116,7 @@ export default function App() {
             {load.state === 'ready' && (
               <>
                 <Legend />
-                <Calendar dayIndex={dayIndex} start={start} monthCount={monthCount} onPick={pick} />
+                <Calendar view={view} start={start} monthCount={monthCount} onPick={pick} />
                 <div className="actions more">
                   <button
                     className="button"
@@ -127,7 +132,12 @@ export default function App() {
           {load.state === 'ready' && (
             <section className="panel">
               <h2>Les périodes libres</h2>
-              <OpenWindows periods={visible} start={start} selected={selected} onPick={pick} />
+              <OpenWindows
+                windows={view.windows}
+                start={start}
+                selected={selected}
+                onPick={pick}
+              />
             </section>
           )}
 

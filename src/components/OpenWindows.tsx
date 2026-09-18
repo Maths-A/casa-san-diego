@@ -1,41 +1,47 @@
-import type { Period } from '../data/types'
-import { formatRange, nights } from '../lib/dates'
-import { guestStatus } from '../lib/status'
+import type { OpenWindow } from '../lib/calendar'
+import { formatDay, formatRange, nights } from '../lib/dates'
 
 interface Props {
-  periods: Period[]
+  windows: OpenWindow[]
   start: Date
-  selected: Period | null
-  onPick: (period: Period) => void
+  selected: OpenWindow | null
+  onPick: (window: OpenWindow) => void
 }
 
-export function OpenWindows({ periods, start, selected, onPick }: Props) {
-  const open = periods.filter((p) => guestStatus(p) === 'open')
-
-  if (open.length === 0) {
+export function OpenWindows({ windows, start, selected, onPick }: Props) {
+  if (windows.length === 0) {
     return (
       <p className="empty-state">
-        Rien de libre au calendrier pour le moment. Écrivez-nous quand même, les plans bougent.
+        Rien de libre sur les mois affichés. Écrivez-nous quand même, les plans bougent.
       </p>
     )
   }
 
   return (
     <ul className="windows">
-      {open.map((period) => {
-        const count = nights(period)
-        const isSelected = selected?.from === period.from && selected?.to === period.to
+      {windows.map((window) => {
+        const count = nights(window)
+        const isSelected = selected?.from === window.from && selected?.to === window.to
         return (
-          <li key={`${period.from}-${period.to}`}>
+          <li key={`${window.from}-${window.to}`}>
             <button
               className={`window${isSelected ? ' selected' : ''}`}
-              onClick={() => onPick(period)}
+              onClick={() => onPick(window)}
               aria-pressed={isSelected}
             >
-              <span className="window-dates">{formatRange(period, start)}</span>
+              <span className="window-dates">
+                {window.openEnded
+                  ? `à partir du ${formatDay(window.from, start)}`
+                  : formatRange(window, start)}
+              </span>
               <span className="window-meta">
-                {count} nuit{count === 1 ? '' : 's'}
-                {period.note ? ` · ${period.note}` : ''}
+                {window.openEnded ? (
+                  'et au-delà'
+                ) : (
+                  <>
+                    {count} nuit{count === 1 ? '' : 's'}
+                  </>
+                )}
               </span>
             </button>
           </li>

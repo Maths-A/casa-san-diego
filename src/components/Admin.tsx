@@ -182,7 +182,6 @@ export function Admin() {
       try {
         const to = await sendRequest(valid, {
           name: 'Essai depuis le tableau de bord',
-          email: '',
           people: '2',
           arrive: '',
           leave: '',
@@ -256,8 +255,9 @@ export function Admin() {
       <section className="panel">
         <h2>Nos disponibilités</h2>
         <p className="request-lead">
-          Une ligne par période. Cochez qui est à la maison : la chambre n&rsquo;est proposée que si
-          elle est libre et que l&rsquo;un de vous deux est là.
+          Tout est libre par défaut. Chaque ligne est une exception : une absence, une chambre déjà
+          prise, une période qu&rsquo;on garde pour soi. Cochez qui est à la maison : sans personne,
+          la chambre ne peut pas être proposée.
         </p>
 
         <div className="table-scroll">
@@ -353,7 +353,7 @@ export function Admin() {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={8} className="derived">
-                    Aucune période pour l&rsquo;instant. Ajoutez la première ci-dessous.
+                    Aucune exception : tous les mois affichés sont proposés aux visiteurs.
                   </td>
                 </tr>
               )}
@@ -363,7 +363,7 @@ export function Admin() {
 
         <div className="actions">
           <button className="button" onClick={addRow}>
-            Ajouter une période
+            Ajouter une exception
           </button>
           <button className="button primary" onClick={publish} disabled={busy || !gistId || !token}>
             {busy ? 'En cours…' : 'Publier'}
@@ -507,7 +507,9 @@ export function Admin() {
       <section className="panel">
         <h2>Ce que ça donne</h2>
         {rows.length === 0 ? (
-          <p className="empty-state">Rien à montrer tant qu&rsquo;aucune période n&rsquo;est saisie.</p>
+          <p className="empty-state">
+            Aucune exception : les visiteurs voient tout le calendrier comme libre.
+          </p>
         ) : (
           <ul className="windows">
             {[...rows]

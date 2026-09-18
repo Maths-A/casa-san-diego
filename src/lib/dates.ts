@@ -1,4 +1,8 @@
-import type { Period } from '../data/types'
+/** Tout ce dont ces fonctions ont besoin : deux bornes. */
+export interface Span {
+  from: string
+  to: string
+}
 
 const DAY_MS = 86_400_000
 const LOCALE = 'fr-FR'
@@ -24,12 +28,12 @@ export function today(): Date {
 }
 
 /** Nombre de nuits : 'from' et 'to' sont deux nuits passées ici. */
-export function nights(period: Period): number {
+export function nights(period: Span): number {
   return Math.round((parseISO(period.to).getTime() - parseISO(period.from).getTime()) / DAY_MS) + 1
 }
 
 /** Toutes les dates de la période, bornes comprises. */
-export function daysOf(period: Period): string[] {
+export function daysOf(period: Span): string[] {
   const out: string[] = []
   const end = parseISO(period.to)
   for (let d = parseISO(period.from); d <= end; d = addDays(d, 1)) out.push(toISO(d))
@@ -37,8 +41,8 @@ export function daysOf(period: Period): string[] {
 }
 
 /** Table date -> période, pour colorer le calendrier. */
-export function buildDayIndex(periods: Period[]): Map<string, Period> {
-  const index = new Map<string, Period>()
+export function buildDayIndex<T extends Span>(periods: T[]): Map<string, T> {
+  const index = new Map<string, T>()
   for (const period of periods) {
     for (const day of daysOf(period)) index.set(day, period)
   }
@@ -50,7 +54,7 @@ export function buildDayIndex(periods: Period[]): Map<string, Period> {
  * période déjà commencée ne garde que ses nuits restantes, pour ne jamais
  * afficher le passé comme disponible.
  */
-export function upcoming(periods: Period[], from: Date): Period[] {
+export function upcoming<T extends Span>(periods: T[], from: Date): T[] {
   const floor = toISO(from)
   return periods
     .filter((p) => p.to >= floor)
@@ -104,7 +108,7 @@ export function formatDay(iso: string, reference?: Date): string {
 }
 
 /** 'du ven. 2 oct. au lun. 12 oct.', le départ étant le lendemain de la dernière nuit. */
-export function formatRange(period: Period, reference?: Date): string {
+export function formatRange(period: Span, reference?: Date): string {
   const arrivee = formatDay(period.from, reference)
   const depart = formatDay(toISO(addDays(parseISO(period.to), 1)), reference)
   return `du ${arrivee} au ${depart}`
