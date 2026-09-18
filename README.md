@@ -22,8 +22,9 @@ Deux choses à savoir :
   s'authentifier. N'y écrivez rien de confidentiel.
 - La lecture emprunte deux chemins indépendants, pour que le calendrier ne
   disparaisse pas au premier incident. Les visiteurs passent par l'adresse
-  directe du fichier, sans quota mais servie par un cache de cinq minutes : une
-  publication met donc ce délai à leur parvenir. Le tableau d'administration
+  directe du fichier, sans quota. Son cache de cinq minutes est contourné par un
+  paramètre qui change chaque minute : une publication leur parvient donc en une
+  minute au plus. Le tableau d'administration
   passe d'abord par l'API, toujours à jour, pour ne jamais travailler sur une
   version périmée. Chacun se rabat sur l'autre en cas de panne. L'API n'accorde
   que soixante appels par heure et par adresse IP à qui n'est pas authentifié,

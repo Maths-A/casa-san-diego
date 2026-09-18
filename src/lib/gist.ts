@@ -153,10 +153,15 @@ async function fetchByApi(gistId: string, token?: string): Promise<Snapshot> {
 
 /**
  * Par l'adresse directe du fichier : sans quota, mais servi par un cache de
- * cinq minutes. C'est le chemin des visiteurs, qui sont nombreux et pas pressés.
+ * cinq minutes. C'est le chemin des visiteurs.
+ *
+ * Le paramètre change à chaque minute : le cache ne peut donc pas servir une
+ * version de plus d'une minute, tout en restant utile aux visiteurs qui se
+ * suivent pendant cette minute-là.
  */
 async function fetchByRawUrl(gistId: string): Promise<Snapshot> {
-  const url = `${RAW}/${config.gistOwner}/${gistId}/raw/${config.gistFile}`
+  const minute = Math.floor(Date.now() / 60_000)
+  const url = `${RAW}/${config.gistOwner}/${gistId}/raw/${config.gistFile}?t=${minute}`
   const response = await fetch(url, { cache: 'no-store' })
   if (!response.ok) throw await explain(response)
   return readSnapshot(await response.text())
