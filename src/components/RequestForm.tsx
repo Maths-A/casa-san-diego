@@ -1,7 +1,72 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { OpenWindow } from '../lib/calendar'
 import { addDays, formatDay, parseISO, toISO } from '../lib/dates'
+import { useLang } from '../lib/i18n'
 import { MailError, sendRequest } from '../lib/mail'
+
+const TEXT = {
+  fr: {
+    dates: (from: string, to: string) => `du ${from} au ${to}`,
+    hello: (name: string) => (name ? `Bonjour, c’est ${name}.` : 'Bonjour !'),
+    come: (dates: string) => (dates ? `On aimerait venir ${dates}.` : 'On aimerait venir vous voir.'),
+    people: (n: string) => `On serait ${n}.`,
+    sendFailed: 'L’envoi a échoué.',
+    sentTitle: 'C’est parti',
+    sentLead:
+      'Votre demande nous est arrivée. On vous répond vite. Rien n’est réservé tant qu’on n’a pas répondu.',
+    again: 'Demander d’autres dates',
+    title: 'Demander des dates',
+    leadSelected: 'Ajustez les dates si vous ne venez qu’une partie du temps.',
+    leadEmpty: 'Choisissez des dates libres au calendrier, ou remplissez vous-même.',
+    name: 'Votre nom',
+    namePlaceholder: 'Ana et Tom',
+    howMany: 'Vous êtes combien',
+    arrive: 'Arrivée',
+    leave: 'Départ',
+    note: 'Ce qu’on devrait savoir',
+    notePlaceholder: 'bla bla bla.',
+    trap: 'Laissez ce champ vide',
+    outOfOrder: 'Le départ doit venir après l’arrivée.',
+    outside: 'Ces dates dépassent la période libre. Demandez quand même, c’est peut-être jouable.',
+    sending: 'Un instant…',
+    send: 'Envoyer la demande',
+    copy: 'Copier la demande',
+    copied:
+      'Votre demande est dans le presse-papiers : envoyez-la nous par message, elle ne sera pas perdue.',
+    copyHint: 'Le bouton copie votre demande, à nous envoyer par message.',
+    failed: 'Écrivez-nous directement en nous donnant vos dates, on s’en occupe.',
+  },
+  en: {
+    dates: (from: string, to: string) => `from ${from} to ${to}`,
+    hello: (name: string) => (name ? `Hi, it’s ${name}.` : 'Hi!'),
+    come: (dates: string) => (dates ? `We’d love to come ${dates}.` : 'We’d love to come and visit.'),
+    people: (n: string) => (n === '1' ? 'It would be just me.' : `There would be ${n} of us.`),
+    sendFailed: 'Sending failed.',
+    sentTitle: 'On its way',
+    sentLead:
+      'Your request reached us. We’ll get back to you soon. Nothing is booked until we’ve replied.',
+    again: 'Ask for other dates',
+    title: 'Ask for dates',
+    leadSelected: 'Adjust the dates if you’re only coming for part of that time.',
+    leadEmpty: 'Pick free dates on the calendar, or fill them in yourself.',
+    name: 'Your name',
+    namePlaceholder: 'Ana and Tom',
+    howMany: 'How many of you',
+    arrive: 'Arrival',
+    leave: 'Departure',
+    note: 'Anything we should know',
+    notePlaceholder: 'blah blah blah.',
+    trap: 'Leave this field empty',
+    outOfOrder: 'Departure has to come after arrival.',
+    outside: 'These dates go beyond the free period. Ask anyway, it might work out.',
+    sending: 'One moment…',
+    send: 'Send the request',
+    copy: 'Copy the request',
+    copied: 'Your request is on your clipboard: send it to us by message, it won’t get lost.',
+    copyHint: 'The button copies your request, for you to send us by message.',
+    failed: 'Write to us directly with your dates, we’ll take care of it.',
+  },
+}
 
 interface Props {
   selected: OpenWindow | null
@@ -13,6 +78,8 @@ interface Props {
 type Sending = 'idle' | 'sending' | 'sent' | 'copied' | 'failed'
 
 export function RequestForm({ selected, start, recipients }: Props) {
+  const lang = useLang()
+  const t = TEXT[lang]
   const [name, setName] = useState('')
   const [people, setPeople] = useState('2')
   const [arrive, setArrive] = useState('')
@@ -43,17 +110,13 @@ export function RequestForm({ selected, start, recipients }: Props) {
   )
 
   const dates =
-    arrive && leave ? `du ${formatDay(arrive, start)} au ${formatDay(leave, start)}` : ''
+    arrive && leave ? t.dates(formatDay(arrive, start, lang), formatDay(leave, start, lang)) : ''
 
   const message = useMemo(() => {
-    const lines = [
-      name.trim() ? `Bonjour, c’est ${name.trim()}.` : 'Bonjour !',
-      dates ? `On aimerait venir ${dates}.` : 'On aimerait venir vous voir.',
-      `On serait ${people}.`,
-    ]
+    const lines = [t.hello(name.trim()), t.come(dates), t.people(people)]
     if (note.trim()) lines.push(note.trim())
     return lines.join('\n')
-  }, [name, people, dates, note])
+  }, [t, name, people, dates, note])
 
   async function copy(): Promise<boolean> {
     try {
@@ -93,10 +156,10 @@ export function RequestForm({ selected, start, recipients }: Props) {
         leave,
         note: note.trim(),
         dates,
-      })
+      }, lang)
       setState('sent')
     } catch (error) {
-      setProblem(error instanceof MailError ? error.message : 'L’envoi a échoué.')
+      setProblem(error instanceof MailError ? error.message : t.sendFailed)
       setState((await copy()) ? 'copied' : 'failed')
     }
   }
@@ -104,14 +167,11 @@ export function RequestForm({ selected, start, recipients }: Props) {
   if (state === 'sent') {
     return (
       <div className="request">
-        <h2>C&rsquo;est parti</h2>
-        <p className="request-lead">
-          Votre demande nous est arrivée. On vous répond vite. Rien n&rsquo;est réservé tant
-          qu&rsquo;on n&rsquo;a pas répondu.
-        </p>
+        <h2>{t.sentTitle}</h2>
+        <p className="request-lead">{t.sentLead}</p>
         <div className="actions">
           <button className="button" onClick={() => setState('idle')}>
-            Demander d&rsquo;autres dates
+            {t.again}
           </button>
         </div>
       </div>
@@ -120,20 +180,16 @@ export function RequestForm({ selected, start, recipients }: Props) {
 
   return (
     <div className="request">
-      <h2>Demander des dates</h2>
-      <p className="request-lead">
-        {selected
-          ? 'Ajustez les dates si vous ne venez qu’une partie du temps.'
-          : 'Choisissez des dates libres au calendrier, ou remplissez vous-même.'}
-      </p>
+      <h2>{t.title}</h2>
+      <p className="request-lead">{selected ? t.leadSelected : t.leadEmpty}</p>
 
       <div className="fields">
         <label>
-          Votre nom
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ana et Tom" />
+          {t.name}
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.namePlaceholder} />
         </label>
         <label>
-          Vous êtes combien
+          {t.howMany}
           <input
             type="number"
             min="1"
@@ -143,34 +199,30 @@ export function RequestForm({ selected, start, recipients }: Props) {
           />
         </label>
         <label>
-          Arrivée
+          {t.arrive}
           <input type="date" value={arrive} onChange={(e) => setArrive(e.target.value)} />
         </label>
         <label>
-          Départ
+          {t.leave}
           <input type="date" value={leave} onChange={(e) => setLeave(e.target.value)} />
         </label>
         <label className="wide">
-          Ce qu&rsquo;on devrait savoir
+          {t.note}
           <textarea
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="bla bla bla."
+            placeholder={t.notePlaceholder}
           />
         </label>
         <label className="trap" aria-hidden="true">
-          Laissez ce champ vide
+          {t.trap}
           <input tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} />
         </label>
       </div>
 
-      {datesOutOfOrder && <p className="warn">Le départ doit venir après l&rsquo;arrivée.</p>}
-      {!datesOutOfOrder && outsideWindow && (
-        <p className="warn">
-          Ces dates dépassent la période libre. Demandez quand même, c&rsquo;est peut-être jouable.
-        </p>
-      )}
+      {datesOutOfOrder && <p className="warn">{t.outOfOrder}</p>}
+      {!datesOutOfOrder && outsideWindow && <p className="warn">{t.outside}</p>}
 
       <div className="actions">
         <button
@@ -178,30 +230,19 @@ export function RequestForm({ selected, start, recipients }: Props) {
           onClick={submit}
           disabled={state === 'sending' || datesOutOfOrder}
         >
-          {state === 'sending'
-            ? 'Un instant…'
-            : recipients.length > 0
-              ? 'Envoyer la demande'
-              : 'Copier la demande'}
+          {state === 'sending' ? t.sending : recipients.length > 0 ? t.send : t.copy}
         </button>
       </div>
 
       {problem && <p className="warn">{problem}</p>}
       {state === 'copied' && (
-        <p className="hint">
-          Votre demande est dans le presse-papiers : envoyez-la nous par message, elle ne sera pas
-          perdue.
-        </p>
+        <p className="hint">{t.copied}</p>
       )}
       {recipients.length === 0 && state === 'idle' && (
-        <p className="hint">
-          Le bouton copie votre demande, à nous envoyer par message.
-        </p>
+        <p className="hint">{t.copyHint}</p>
       )}
       {state === 'failed' && (
-        <p className="hint">
-          Écrivez-nous directement en nous donnant vos dates, on s&rsquo;en occupe.
-        </p>
+        <p className="hint">{t.failed}</p>
       )}
     </div>
   )

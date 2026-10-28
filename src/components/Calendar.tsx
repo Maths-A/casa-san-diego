@@ -1,8 +1,15 @@
 import type { CalendarView, OpenWindow } from '../lib/calendar'
 import { describeDay, windowOf } from '../lib/calendar'
 import { monthGrid, monthLabel, monthsFrom, toISO } from '../lib/dates'
+import { useLang } from '../lib/i18n'
 
-const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+/** La semaine commence le lundi, dans les deux langues. */
+const WEEKDAYS = {
+  fr: ['L', 'M', 'M', 'J', 'V', 'S', 'D'],
+  en: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+}
+
+const ASK = { fr: 'Demander ces dates', en: 'Ask for these dates' }
 
 interface Props {
   view: CalendarView
@@ -13,15 +20,16 @@ interface Props {
 }
 
 export function Calendar({ view, start, monthCount, onPick }: Props) {
+  const lang = useLang()
   const todayISO = toISO(start)
 
   return (
     <div className="calendar">
       {monthsFrom(start, monthCount).map(({ year, month }) => (
         <section className="month" key={`${year}-${month}`}>
-          <h3>{monthLabel(year, month)}</h3>
+          <h3>{monthLabel(year, month, lang)}</h3>
           <div className="weekdays" aria-hidden="true">
-            {WEEKDAYS.map((d, i) => (
+            {WEEKDAYS[lang].map((d, i) => (
               <span key={i}>{d}</span>
             ))}
           </div>
@@ -32,7 +40,7 @@ export function Calendar({ view, start, monthCount, onPick }: Props) {
               const iso = toISO(date)
               const past = iso < todayISO
               const info = past ? undefined : view.days.get(iso)
-              const label = info ? describeDay(iso, info, start) : iso
+              const label = info ? describeDay(iso, info, start, lang) : iso
               const window = onPick && info?.status === 'open' ? windowOf(view, iso) : null
 
               const className = [
@@ -51,7 +59,7 @@ export function Calendar({ view, start, monthCount, onPick }: Props) {
                   key={i}
                   onClick={() => onPick(window)}
                   title={label}
-                  aria-label={`${label}. Demander ces dates`}
+                  aria-label={`${label}. ${ASK[lang]}`}
                 >
                   {date.getUTCDate()}
                 </button>

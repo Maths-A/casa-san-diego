@@ -4,8 +4,10 @@ export interface Span {
   to: string
 }
 
+import type { Lang } from './i18n'
+import { localeOf } from './i18n'
+
 const DAY_MS = 86_400_000
-const LOCALE = 'fr-FR'
 
 /** Lit une date 'AAAA-MM-JJ' à minuit UTC, pour qu'aucun fuseau ne la décale. */
 export function parseISO(iso: string): Date {
@@ -54,8 +56,8 @@ export function upcoming<T extends Span>(periods: T[], from: Date): T[] {
 }
 
 /** 'octobre 2026'. La majuscule est mise par la feuille de style. */
-export function monthLabel(year: number, month: number): string {
-  return new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+export function monthLabel(year: number, month: number, lang: Lang = 'fr'): string {
+  return new Intl.DateTimeFormat(localeOf(lang), { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
     new Date(Date.UTC(year, month, 1)),
   )
 }
@@ -89,9 +91,9 @@ export function monthsFrom(start: Date, count: number): { year: number; month: n
 }
 
 /** 'ven. 2 oct.', avec l'année seulement si elle diffère de la référence. */
-export function formatDay(iso: string, reference?: Date): string {
+export function formatDay(iso: string, reference?: Date, lang: Lang = 'fr'): string {
   const d = parseISO(iso)
-  const label = new Intl.DateTimeFormat(LOCALE, {
+  const label = new Intl.DateTimeFormat(localeOf(lang), {
     weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
   }).format(d)
   const sameYear = !reference || d.getUTCFullYear() === reference.getUTCFullYear()
@@ -99,8 +101,8 @@ export function formatDay(iso: string, reference?: Date): string {
 }
 
 /** 'du ven. 2 oct. au lun. 12 oct.', le départ étant le lendemain de la dernière nuit. */
-export function formatRange(period: Span, reference?: Date): string {
-  const arrivee = formatDay(period.from, reference)
-  const depart = formatDay(toISO(addDays(parseISO(period.to), 1)), reference)
-  return `du ${arrivee} au ${depart}`
+export function formatRange(period: Span, reference?: Date, lang: Lang = 'fr'): string {
+  const arrivee = formatDay(period.from, reference, lang)
+  const depart = formatDay(toISO(addDays(parseISO(period.to), 1)), reference, lang)
+  return lang === 'en' ? `${arrivee} to ${depart}` : `du ${arrivee} au ${depart}`
 }

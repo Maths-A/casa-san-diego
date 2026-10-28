@@ -1,5 +1,21 @@
 import type { OpenWindow } from '../lib/calendar'
 import { formatDay, formatRange, nights } from '../lib/dates'
+import { useLang } from '../lib/i18n'
+
+const TEXT = {
+  fr: {
+    none: 'Rien de libre sur les mois affichés. Écrivez-nous quand même, les plans bougent.',
+    from: (day: string) => `à partir du ${day}`,
+    beyond: 'et au-delà',
+    nights: (n: number) => `${n} nuit${n === 1 ? '' : 's'}`,
+  },
+  en: {
+    none: 'Nothing free in the months shown. Write to us anyway, plans change.',
+    from: (day: string) => `from ${day}`,
+    beyond: 'and beyond',
+    nights: (n: number) => `${n} night${n === 1 ? '' : 's'}`,
+  },
+}
 
 interface Props {
   windows: OpenWindow[]
@@ -9,12 +25,10 @@ interface Props {
 }
 
 export function OpenWindows({ windows, start, selected, onPick }: Props) {
+  const lang = useLang()
+  const t = TEXT[lang]
   if (windows.length === 0) {
-    return (
-      <p className="empty-state">
-        Rien de libre sur les mois affichés. Écrivez-nous quand même, les plans bougent.
-      </p>
-    )
+    return <p className="empty-state">{t.none}</p>
   }
 
   return (
@@ -31,17 +45,11 @@ export function OpenWindows({ windows, start, selected, onPick }: Props) {
             >
               <span className="window-dates">
                 {window.openEnded
-                  ? `à partir du ${formatDay(window.from, start)}`
-                  : formatRange(window, start)}
+                  ? t.from(formatDay(window.from, start, lang))
+                  : formatRange(window, start, lang)}
               </span>
               <span className="window-meta">
-                {window.openEnded ? (
-                  'et au-delà'
-                ) : (
-                  <>
-                    {count} nuit{count === 1 ? '' : 's'}
-                  </>
-                )}
+                {window.openEnded ? t.beyond : t.nights(count)}
               </span>
             </button>
           </li>
