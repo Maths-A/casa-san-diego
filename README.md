@@ -144,6 +144,20 @@ date que seul l'affichage impose.
 du calendrier et les encarts « Bon à savoir ». Un changement de texte
 passe par un `git push`, contrairement aux dates.
 
+## Français et anglais
+
+La page des visiteurs existe en français et en anglais, avec un bouton FR | EN
+en haut à droite. Sans choix de leur part, elle s'affiche en français pour un
+navigateur réglé en français, en anglais sinon ; un choix fait au bouton est
+retenu pour les visites suivantes. Un lien peut aussi imposer la langue :
+`?lang=en` ou `?lang=fr`.
+
+Les textes de `src/config.ts` montrés aux visiteurs ont donc deux versions,
+`fr` et `en` : en changer une, c'est penser à l'autre. Les autres textes sont
+dans les composants, dans un objet `TEXT` en tête de fichier. Le tableau
+d'administration reste en français, et les e-mails de demande aussi (avec une
+ligne « Langue » pour savoir dans quelle langue répondre).
+
 ## Lancer le site en local
 
 ```sh

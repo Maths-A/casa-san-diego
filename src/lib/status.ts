@@ -1,4 +1,5 @@
 import type { HostKey, Period } from '../data/types'
+import type { Lang } from './i18n'
 
 /** Ce que le visiteur voit, une fois tout combiné. */
 export type Status = 'open' | 'booked' | 'blocked'
@@ -15,11 +16,21 @@ export function guestStatus(period: Period): Status {
   return HOST_KEYS.some((key) => period.hosts[key]) ? 'open' : 'blocked'
 }
 
-export const statusLabel: Record<Status, string> = {
-  open: 'libre',
-  booked: 'déjà pris',
-  blocked: 'pas disponible',
+export const statusLabels: Record<Lang, Record<Status, string>> = {
+  fr: {
+    open: 'libre',
+    booked: 'déjà pris',
+    blocked: 'pas disponible',
+  },
+  en: {
+    open: 'available',
+    booked: 'already taken',
+    blocked: 'not available',
+  },
 }
+
+/** Le tableau d'administration reste en français. */
+export const statusLabel = statusLabels.fr
 
 export const roomLabel: Record<Period['room'], string> = {
   free: 'Libre',

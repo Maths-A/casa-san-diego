@@ -1,8 +1,9 @@
 import type { HostKey, Period } from '../data/types'
 import { config } from '../config'
 import { addDays, daysOf, formatDay, toISO } from './dates'
+import type { Lang } from './i18n'
 import type { Status } from './status'
-import { HOST_KEYS, guestStatus, statusLabel } from './status'
+import { HOST_KEYS, guestStatus, statusLabels } from './status'
 
 /** Une suite de nuits libres, déduite de ce qui n'est pas pris. */
 export interface OpenWindow {
@@ -101,16 +102,30 @@ export function windowOf(view: CalendarView, iso: string): OpenWindow | null {
   return view.windowByDay.get(iso) ?? null
 }
 
-const PRESENCE_TEXT: Record<Presence, string> = {
-  both: `${config.hostNames.mathis} et ${config.hostNames.julie} sont là`,
-  mathis: `${config.hostNames.mathis} est là, ${config.hostNames.julie} est absente`,
-  julie: `${config.hostNames.julie} est là, ${config.hostNames.mathis} est absent`,
-  none: 'personne à la maison',
+const { mathis, julie } = config.hostNames
+
+const PRESENCE_TEXT: Record<Lang, Record<Presence, string>> = {
+  fr: {
+    both: `${mathis} et ${julie} sont là`,
+    mathis: `${mathis} est là, ${julie} est absente`,
+    julie: `${julie} est là, ${mathis} est absent`,
+    none: 'personne à la maison',
+  },
+  en: {
+    both: `${mathis} and ${julie} are home`,
+    mathis: `${mathis} is home, ${julie} is away`,
+    julie: `${julie} is home, ${mathis} is away`,
+    none: 'nobody home',
+  },
 }
 
 /** La phrase qui s'affiche au survol d'un jour. */
-export function describeDay(iso: string, info: DayInfo, reference?: Date): string {
-  const parts = [formatDay(iso, reference), statusLabel[info.status], PRESENCE_TEXT[info.presence]]
+export function describeDay(iso: string, info: DayInfo, reference?: Date, lang: Lang = 'fr'): string {
+  const parts = [
+    formatDay(iso, reference, lang),
+    statusLabels[lang][info.status],
+    PRESENCE_TEXT[lang][info.presence],
+  ]
   if (info.note) parts.push(info.note)
   return parts.join(' · ')
 }

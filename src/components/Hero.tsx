@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { config } from '../config'
+import { useLang } from '../lib/i18n'
 
 /**
  * Le décor est dessiné, pas photographié : rien à héberger, aucune licence à
@@ -56,9 +57,11 @@ function Gull({ x, y, scale = 1, delay = 0 }: { x: number; y: number; scale?: nu
   )
 }
 
-export function Hero({ children }: { children?: ReactNode }) {
+export function Hero({ children, corner }: { children?: ReactNode; corner?: ReactNode }) {
+  const lang = useLang()
   return (
     <header className="hero">
+      {corner && <div className="hero-corner">{corner}</div>}
       <div className="hero-sun" aria-hidden="true" />
 
       <div className="hero-scene" aria-hidden="true">
@@ -113,7 +116,7 @@ export function Hero({ children }: { children?: ReactNode }) {
       </div>
 
       <div className="hero-text">
-        <p className="eyebrow">{config.location}</p>
+        <p className="eyebrow">{config.location[lang]}</p>
         <h1>{config.siteName}</h1>
         {children}
       </div>

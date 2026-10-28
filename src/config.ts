@@ -1,12 +1,18 @@
 /**
  * Tout ce que tu auras envie de changer se trouve dans ce fichier.
+ *
+ * Les textes montrés aux visiteurs existent en deux langues : `fr` et `en`.
+ * Quand tu changes l'un, pense à changer l'autre.
  */
 export const config = {
   /** Affiché dans l'onglet du navigateur et en haut de la page. */
   siteName: 'Casa San Diego',
 
-  /** Qui reçoit, tel qu'affiché en haut de la page. */
-  hosts: 'les Doudous',
+  /** Qui reçoit, tel qu'affiché en haut de la page, après « Chez » / « Hosted by ». */
+  hosts: {
+    fr: 'les Doudous',
+    en: 'the Doudous',
+  },
 
   /** Les prénoms utilisés dans le tableau d'administration. */
   hostNames: {
@@ -15,10 +21,16 @@ export const config = {
   },
 
   /** La phrase d'accueil, sous le titre. */
-  tagline: 'Disponibilités de notre appartement',
+  tagline: {
+    fr: 'Disponibilités de notre appartement',
+    en: 'When our apartment is free',
+  },
 
   /** Ville ou quartier. Garde l'adresse exacte en dehors d'une page publique. */
-  location: 'San Diego, Californie',
+  location: {
+    fr: 'San Diego, Californie',
+    en: 'San Diego, California',
+  },
 
   /**
    * Le Gist secret qui contient le calendrier. C'est la seule source de
@@ -41,20 +53,26 @@ export const config = {
   /** Les encarts « Bon à savoir ». Modifie-les librement. */
   practicalInfo: [
     {
-      title: 'L’appartement',
-      body: 'Un canapé lit est disponible + deux matelas gonflable de 2 places.',
+      title: { fr: 'L’appartement', en: 'The apartment' },
+      body: {
+        fr: 'Un canapé lit est disponible + deux matelas gonflables de 2 places.',
+        en: 'There’s a sofa bed, plus two double air mattresses.',
+      },
     },
     {
-      title: 'Pour venir',
-      body: 'L’aéroport de San Diego (SAN) est à 15 minutes. Vol direct depuis Amsterdam, Londres et Munich. Vol direct possible jusqu’à Los Angles.',
+      title: { fr: 'Pour venir', en: 'Getting here' },
+      body: {
+        fr: 'L’aéroport de San Diego (SAN) est à 15 minutes. Vol direct depuis Amsterdam, Londres et Munich. Vol direct possible jusqu’à Los Angeles.',
+        en: 'San Diego airport (SAN) is 15 minutes away. Direct flights from Amsterdam, London and Munich. You can also fly direct to Los Angeles.',
+      },
     },
     {
-      title: 'Activités',
-      body: 'Surf, Plage, Randonnées',
+      title: { fr: 'Activités', en: 'Things to do' },
+      body: { fr: 'Surf, Plage, Randonnées', en: 'Surfing, beach, hiking' },
     },
     {
-      title: 'Non autorisé',
-      body: 'Les problèmes',
+      title: { fr: 'Non autorisé', en: 'Not allowed' },
+      body: { fr: 'Les problèmes', en: 'Trouble' },
     },
   ],
 
